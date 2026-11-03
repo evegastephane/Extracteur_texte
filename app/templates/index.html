@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Extrayez le texte de vos images, directement sur votre ordinateur.">
+  <title>Extracteur — De l’image au texte</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="topbar"><a href="/" class="brand" aria-label="Extracteur, accueil"><span class="brand-mark" aria-hidden="true">[t]</span> Extracteur</a><span class="local-note"><span aria-hidden="true" class="dot"></span> Sur votre ordinateur</span></header>
+  <main>
+    <div class="intro"><h1>De l’image au texte.</h1><p>Une photo, une capture, un document. Récupérez le texte en quelques instants.</p></div>
+    <div class="workspace">
+      <section class="source" aria-labelledby="source-title">
+        <div class="section-heading"><h2 id="source-title">Votre image</h2><span>PNG ou JPEG · 10 Mio max.</span></div>
+        <label class="dropzone" id="dropzone" for="image">
+          <input id="image" type="file" accept="image/png,image/jpeg" aria-describedby="image-help">
+          <span class="upload-content" id="upload-content"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="5" y="5" width="30" height="30" rx="4" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="14" r="3" stroke="currentColor" stroke-width="1.5"/><path d="m6 29 9-9 7 7 5-5 8 8" stroke="currentColor" stroke-width="1.5"/></svg><strong>Choisir une image</strong><span>ou la déposer ici</span></span>
+          <img id="preview" alt="Aperçu de l’image sélectionnée" hidden>
+          <span class="change-image" id="change-image" hidden>Changer d’image</span>
+        </label>
+        <p id="image-help" class="file-info">Une image à la fois, jusqu’à 20 millions de pixels.</p>
+        <form id="ocr-form">
+          <label for="language">Langue du document</label>
+          <div class="extract-controls"><select id="language" name="language"><option value="fra">Français</option><option value="eng">Anglais</option><option value="fra+eng">Français + Anglais</option></select><button id="extract" class="primary" type="submit" disabled>Extraire le texte <span aria-hidden="true">→</span></button></div>
+        </form>
+      </section>
+      <section class="result" aria-labelledby="result-title" aria-busy="false">
+        <div class="section-heading"><h2 id="result-title">Votre texte</h2><span id="count">Prêt à être extrait</span></div>
+        <div class="editor-wrap"><label class="sr-only" for="text">Texte extrait, modifiable</label><textarea id="text" placeholder="Le texte de votre image apparaîtra ici. Vous pourrez le corriger avant de le récupérer." spellcheck="true" disabled></textarea></div>
+        <div class="result-actions"><span class="edit-note">Relisez, corrigez, puis récupérez.</span><button id="copy" type="button" disabled>Copier</button><button id="download" type="button" disabled>Exporter .txt</button></div>
+      </section>
+    </div>
+    <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Choisissez une image pour commencer.</p>
+    <footer><p>Vos documents restent ici. Aucun envoi à un service externe.</p><span>OCR local · Tesseract · Open source</span></footer>
+  </main>
+</body>
+</html>

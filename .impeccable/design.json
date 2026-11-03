@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-03T00:00:00Z",
+  "title": "Design System: Extracteur",
+  "extensions": {
+    "colorMeta": {
+      "accent": {"role": "primary", "displayName": "Forest green"},
+      "paper": {"role": "neutral", "displayName": "Paper"},
+      "ink": {"role": "neutral", "displayName": "Ink"},
+      "error": {"role": "error", "displayName": "Error red"}
+    },
+    "typographyMeta": {
+      "display": {"displayName": "Serif introduction", "purpose": "Main page heading."},
+      "body": {"displayName": "System sans", "purpose": "Controls, prose and editable OCR output."}
+    },
+    "shadows": [],
+    "motion": [
+      {"name": "state-transition", "value": "background .18s ease-out", "purpose": "Button and upload hover backgrounds."},
+      {"name": "busy", "value": "spin .8s linear infinite", "purpose": "OCR busy indicator; animations and transitions are disabled for reduced motion."}
+    ],
+    "breakpoints": [{"name": "stacked", "value": "760px"}],
+    "focus": {"outline": "3px solid var(--accent)", "outlineOffset": "4px", "uploadOutlineOffset": "3px"}
+  },
+  "components": [
+    {
+      "name": "Extraction button", "kind": "button", "refersTo": "button-primary",
+      "description": "Primary OCR action.",
+      "html": "<button class=\"ds-primary\">Extraire le texte →</button>",
+      "css": ".ds-primary{font:600 16px system-ui,sans-serif;min-height:46px;padding:10px 17px;border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:#fff;cursor:pointer;transition:background .18s ease-out}.ds-primary:hover:enabled{background:#1b4937}.ds-primary:focus-visible{outline:3px solid var(--accent);outline-offset:4px}.ds-primary:disabled{opacity:.48;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-primary{transition:none}}"
+    },
+    {
+      "name": "Result action", "kind": "button", "refersTo": "button-secondary",
+      "description": "Copy or TXT export action.",
+      "html": "<button class=\"ds-secondary\">Copier</button>",
+      "css": ".ds-secondary{font:600 13px system-ui,sans-serif;min-height:40px;padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);cursor:pointer;transition:background .18s ease-out}.ds-secondary:hover:enabled{background:var(--soft)}.ds-secondary:focus-visible{outline:3px solid var(--accent);outline-offset:4px}.ds-secondary:disabled{opacity:.48;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-secondary{transition:none}}"
+    },
+    {
+      "name": "Language selector", "kind": "input", "refersTo": "language",
+      "description": "Native document-language selection.",
+      "html": "<label class=\"ds-language-label\">Langue du document <select class=\"ds-language\"><option>Français</option><option>Anglais</option><option>Français + Anglais</option></select></label>",
+      "css": ".ds-language-label{font:600 13px system-ui,sans-serif;color:var(--ink)}.ds-language{display:block;margin-top:9px;font:400 16px system-ui,sans-serif;min-height:46px;padding:8px 30px 8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}.ds-language:focus-visible{outline:3px solid var(--accent);outline-offset:4px}"
+    },
+    {
+      "name": "Upload target", "kind": "custom", "refersTo": "upload",
+      "description": "Single-image file target; runtime supplies drag and preview behavior.",
+      "html": "<label class=\"ds-upload\"><input type=\"file\" accept=\"image/png,image/jpeg\"><strong>Choisir une image</strong><span>ou la déposer ici</span></label>",
+      "css": ".ds-upload{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:285px;border:1px dashed #a4b4a4;border-radius:8px;background:#f8f9f5;color:var(--muted);font:14px system-ui,sans-serif;cursor:pointer;transition:background .18s ease-out}.ds-upload strong{font-size:16px;color:var(--accent)}.ds-upload input{position:absolute;width:1px;height:1px;opacity:0}.ds-upload:hover{background:var(--soft);border-color:var(--accent)}.ds-upload:focus-within{outline:3px solid var(--accent);outline-offset:3px}@media(max-width:760px){.ds-upload{height:235px}}@media(prefers-reduced-motion:reduce){.ds-upload{transition:none}}"
+    },
+    {
+      "name": "Text editor", "kind": "input", "refersTo": "editor",
+      "description": "Editable OCR result after recognition.",
+      "html": "<textarea class=\"ds-editor\" aria-label=\"Texte extrait, modifiable\">Bonjour le monde.</textarea>",
+      "css": ".ds-editor{display:block;width:100%;min-height:315px;resize:vertical;border:0;padding:0 4px;background:#fff;color:var(--ink);font:16px/1.8 system-ui,sans-serif;caret-color:var(--accent);scrollbar-color:var(--line) #fff}.ds-editor:focus-visible{outline:3px solid var(--accent);outline-offset:4px}.ds-editor:disabled{background:#fff;opacity:1}@media(max-width:760px){.ds-editor{min-height:260px}}"
+    },
+    {
+      "name": "Paired workspace", "kind": "card", "refersTo": "workspace",
+      "description": "One surface containing the source and editable result.",
+      "html": "<div class=\"ds-workspace\"><section class=\"ds-source\"><h2>Votre image</h2></section><section class=\"ds-result\"><h2>Votre texte</h2></section></div>",
+      "css": ".ds-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#fff;color:var(--ink);font-family:system-ui,sans-serif}.ds-source,.ds-result{min-width:0;padding:26px}.ds-source{border-right:1px solid var(--line)}.ds-workspace h2{margin:0;font-size:17px;font-weight:650}@media(max-width:760px){.ds-workspace{grid-template-columns:1fr}.ds-source,.ds-result{padding:20px}.ds-source{border-right:0;border-bottom:1px solid var(--line)}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Paper and forest-green workbench",
+    "overview": "A code-derived description of the implemented interface, not a separately established user preference. Paper surrounds a white work surface; a serif introduction gives character and system typography keeps controls and editable text familiar. Forest green identifies extraction and interactive cues.",
+    "keyCharacteristics": ["Paired source/result panels", "Restrained borders", "Local fonts", "Direct French instructions"],
+    "rules": [{"name": "Flat work surface", "body": "Use tone and thin borders without shadows.", "section": "elevation"}],
+    "dos": ["Do keep extraction primary and copy/export secondary.", "Do preserve visible keyboard focus, clear disabled states and readable French instructions.", "Do keep source and result adjacent on desktop and sequential on mobile."],
+    "donts": ["Don't introduce external font requests or decorative shadows into this local, flat interface.", "Don't hide editing, copy or export behind an extra screen."]
+  }
+}

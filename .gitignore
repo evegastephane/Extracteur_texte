@@ -1,0 +1,7 @@
+.venv/
+.ocr-data/
+__pycache__/
+.pytest_cache/
+.coverage
+*.log
+.test-artifacts/
