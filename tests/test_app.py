@@ -11,6 +11,8 @@ import pytesseract
 from app import create_app
 from app.ocr import MAX_BYTES
 
+FONT_PATH = next((str(path) for path in (Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"), Path("C:/Windows/Fonts/arial.ttf")) if path.is_file()), None)
+
 
 @pytest.fixture
 def app():
@@ -25,7 +27,8 @@ def client(app):
 def image_bytes(content="Bonjour le monde", fmt="PNG", size=(1000, 240)):
     with Image.new("RGB", size, "white") as image:
         if content:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 48)
+            assert FONT_PATH, "Installez DejaVu Sans ou Arial pour les tests OCR."
+            font = ImageFont.truetype(FONT_PATH, 48)
             ImageDraw.Draw(image).text((40, 70), content, font=font, fill="black")
         stream = io.BytesIO()
         image.save(stream, format=fmt)

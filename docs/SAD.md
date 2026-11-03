@@ -81,3 +81,11 @@ Le service refuse les origines et hôtes inattendus pour éviter les appels depu
 Les tests du SRS couvrent le parcours complet, les erreurs, l’absence de réseau, les limites de ressources et le nettoyage. Vérifier particulièrement la terminaison du sous-processus après expiration du délai et le nettoyage après une exception. Les objectifs de mémoire, rapidité et précision restent à mesurer avant de confirmer cette architecture.
 
 Avant distribution, vérifier les licences des versions retenues et des données OCR. Tesseract est sous Apache-2.0 ; la licence du code de ce projet reste à choisir.
+
+## 8. Évolution implémentée : préparation et précision
+
+Le projet est distribué sous MIT. `app/preprocess.py` ajoute OpenCV headless et NumPy pour les transformations et les filtres. `app/ocr.py` valide les images, applique l’orientation EXIF et appelle cette préparation avant Tesseract. Le serveur accepte les réglages dans le champ multipart `options`, tout en conservant la compatibilité sans ce champ.
+
+Le navigateur présente un canvas orienté avec sélection de quatre coins, doublé de champs numériques accessibles. Les coins normalisés sont relatifs à l’image orientée. Le pipeline et ses plafonds de ressources sont décrits dans [ACCURACY.md](ACCURACY.md). L’accumulation de zones est locale dans le champ texte, sans base de données ni interprétation automatique des champs. Le benchmark génère ses propres images et ne conserve aucune donnée personnelle.
+
+Windows dispose de `scripts/setup.ps1` avec contrôle des données OCR par SHA-256 et détection du chemin standard Tesseract ; la validation native Windows reste à effectuer.

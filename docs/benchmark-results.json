@@ -1,0 +1,158 @@
+{
+  "kind": "synthetic",
+  "environment": {
+    "python": "3.12.14",
+    "tesseract": "5.5.0",
+    "opencv": "4.12.0",
+    "numpy": "2.2.6"
+  },
+  "note": "Known manual geometry corrections; results are not a claim about real identity cards. Font and Tesseract versions affect scores.",
+  "samples": [
+    {
+      "sample": "texte_net",
+      "reference": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+      "options": {
+        "layout": "block"
+      },
+      "baseline": {
+        "text": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+        "cer": 0.0,
+        "seconds": 0.143
+      },
+      "prepared": {
+        "text": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+        "cer": 0.0,
+        "seconds": 0.152
+      }
+    },
+    {
+      "sample": "rotation_180",
+      "reference": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+      "options": {
+        "rotation": 180,
+        "layout": "block"
+      },
+      "baseline": {
+        "text": "uole1]SUOW2P 2p JUewn20q\n2102 € 21099 aun\napuouwu 2] 1nofuog",
+        "cer": 0.9322,
+        "seconds": 0.158
+      },
+      "prepared": {
+        "text": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+        "cer": 0.0,
+        "seconds": 0.159
+      }
+    },
+    {
+      "sample": "inclinaison_6",
+      "reference": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+      "options": {
+        "deskew": true,
+        "layout": "block"
+      },
+      "baseline": {
+        "text": "Bonjour le monde\n\nUne école à côté\n\npocument de démonstration",
+        "cer": 0.0508,
+        "seconds": 0.159
+      },
+      "prepared": {
+        "text": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+        "cer": 0.0,
+        "seconds": 0.203
+      }
+    },
+    {
+      "sample": "faible_contraste",
+      "reference": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+      "options": {
+        "mode": "contrast",
+        "layout": "block"
+      },
+      "baseline": {
+        "text": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+        "cer": 0.0,
+        "seconds": 0.16
+      },
+      "prepared": {
+        "text": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+        "cer": 0.0,
+        "seconds": 0.985
+      }
+    },
+    {
+      "sample": "perspective",
+      "reference": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+      "options": {
+        "corners": [
+          [
+            0.11547344110854503,
+            0.13348164627363737
+          ],
+          [
+            0.8622016936104696,
+            0.289210233592881
+          ],
+          [
+            0.7698229407236336,
+            0.8676307007786429
+          ],
+          [
+            0.2155504234026174,
+            0.7563959955506118
+          ]
+        ],
+        "mode": "contrast",
+        "layout": "block"
+      },
+      "baseline": {
+        "text": "Roniour le Monde\nUne école à Côté\n\nDocument de démonstration",
+        "cer": 0.0847,
+        "seconds": 0.253
+      },
+      "prepared": {
+        "text": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+        "cer": 0.0,
+        "seconds": 1.62
+      }
+    },
+    {
+      "sample": "zone_sur_fond",
+      "reference": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+      "options": {
+        "corners": [
+          [
+            0.18761726078799248,
+            0.3336113427856547
+          ],
+          [
+            0.8123827392120075,
+            0.3336113427856547
+          ],
+          [
+            0.8123827392120075,
+            0.6497080900750626
+          ],
+          [
+            0.18761726078799248,
+            0.6497080900750626
+          ]
+        ],
+        "layout": "block"
+      },
+      "baseline": {
+        "text": "Texte du fond à ignorer\n\nBonjour le monde\nUne école à côté\nDocument de démonstration",
+        "cer": 0.4237,
+        "seconds": 0.347
+      },
+      "prepared": {
+        "text": "Bonjour le monde\nUne école à côté\nDocument de démonstration",
+        "cer": 0.0,
+        "seconds": 0.223
+      }
+    }
+  ],
+  "mean_cer": {
+    "baseline": 0.2486,
+    "prepared": 0.0
+  }
+}

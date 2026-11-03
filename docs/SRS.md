@@ -61,4 +61,17 @@ Préparer un jeu versionné de dix images synthétiques sans données personnell
 
 Objectif qualité : taux d’erreur de caractères agrégé inférieur ou égal à 5 % sur ce jeu imprimé net, avec distance de Levenshtein divisée par le nombre de caractères de référence. Normaliser Unicode en NFC et les fins de ligne en LF, sans supprimer accents ou ponctuation. Ce seuil est un objectif à mesurer et ne s’étend pas à toutes les photos.
 
-Aucun test n’a encore été exécuté : ce document spécifie la validation future.
+Ce document conserve le plan de validation initial. Des tests fonctionnels ont depuis été exécutés ; tous les objectifs complets de performance et de précision restent à valider.
+
+## 6. Extension précision implémentée
+
+| ID | Exigence | Validation |
+| --- | --- | --- |
+| F-11 | Rotation manuelle par pas de 90° | OCR réel d’une image tournée et contrôles navigateur |
+| F-12 | Sélection de quatre coins, recadrage et correction de perspective | Géométrie synthétique, rejet des coins invalides, souris et coordonnées clavier |
+| F-13 | Original, contraste/bruit et seuil adaptatif | OCR réel dans chaque mode ; original conservé pour comparaison |
+| F-14 | Correction d’inclinaison faible et choix du PSM | Mesure d’angle sur lignes et OCR synthétique ; modes auto/bloc/dispersé/ligne |
+| F-15 | Extraction manuelle de zones et ajout avec libellés | Parcours navigateur ; conservation du texte corrigé en cas d’échec |
+| F-16 | Comparaison chiffrée avant/après | Script de benchmark CER avec six exemples synthétiques reproductibles |
+
+Le [guide de précision](ACCURACY.md) définit les réglages et le champ API `options`. La limite des images intermédiaires est de 8 millions de pixels et 8 000 pixels de côté. La rotation et les coins restent manuels ; aucune détection automatique de document ou interprétation des champs d’identité n’est promise. Le benchmark synthétique ne remplace pas l’évaluation sur des photos réelles autorisées.

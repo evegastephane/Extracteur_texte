@@ -10,6 +10,7 @@ Le produit lit une image et en extrait du texte grâce à un moteur OCR open sou
 | [PRD](PRD.md) | Produit, parcours utilisateur et périmètre du MVP |
 | [SRS](SRS.md) | Exigences fonctionnelles et critères vérifiables |
 | [SAD](SAD.md) | Architecture et choix techniques proposés |
+| [Précision OCR](ACCURACY.md) | Recadrage, perspective, filtres, zones et mesure des gains |
 
 Périmètre : une petite application web utilisée sur une machine locale, pour une image à la fois. Le MVP est désormais implémenté ; voir le [guide d’installation](../README.md). Les documents ci-dessous conservent le cadrage initial. Les objectifs complets de performance et précision du SRS restent à mesurer.
 

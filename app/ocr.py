@@ -2,12 +2,14 @@
 
 import io
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import warnings
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 import pytesseract
+from .preprocess import LAYOUTS, prepare, validate_options
 
 MAX_BYTES = 10 * 1024 * 1024
 MAX_PIXELS = 20_000_000
@@ -18,6 +20,10 @@ Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 LOCAL_DATA = Path(__file__).resolve().parent.parent / ".ocr-data"
 if LOCAL_DATA.is_dir():
     os.environ.setdefault("TESSDATA_PREFIX", str(LOCAL_DATA))
+if os.name == "nt" and not shutil.which("tesseract"):
+    windows_engine = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Tesseract-OCR" / "tesseract.exe"
+    if windows_engine.is_file():
+        pytesseract.pytesseract.tesseract_cmd = str(windows_engine)
 
 
 class OCRError(Exception):
@@ -39,7 +45,11 @@ def readiness():
         return {"ready": False, "languages": []}
 
 
-def extract(data, language):
+def extract(data, language, options=None):
+    try:
+        options = validate_options(options or {})
+    except (ValueError, TypeError):
+        raise OCRError("invalid_options", "Réglages invalides : vérifiez les coins et les modes proposés.") from None
     if language not in LANGUAGES:
         raise OCRError("invalid_language", "Choisissez une langue proposée.")
     if len(data) > MAX_BYTES:
@@ -61,9 +71,15 @@ def extract(data, language):
                     with oriented.convert("RGBA") as rgba:
                         with Image.new("RGB", rgba.size, "white") as prepared:
                             prepared.paste(rgba, mask=rgba.getchannel("A"))
-                            return pytesseract.image_to_string(
-                                prepared, lang=language, timeout=30,
-                            ).strip()
+                            try:
+                                processed = prepare(prepared, options)
+                            except ValueError as error:
+                                raise OCRError("invalid_selection", str(error)) from None
+                            with processed:
+                                return pytesseract.image_to_string(
+                                    processed, lang=language, timeout=30,
+                                    config=f"--psm {LAYOUTS[options['layout']]}",
+                                ).strip()
     except OCRError:
         raise
     except (Image.DecompressionBombError, Image.DecompressionBombWarning):

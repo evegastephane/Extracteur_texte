@@ -20,10 +20,24 @@
           <input id="image" type="file" accept="image/png,image/jpeg" aria-describedby="image-help">
           <span class="upload-content" id="upload-content"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="5" y="5" width="30" height="30" rx="4" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="14" r="3" stroke="currentColor" stroke-width="1.5"/><path d="m6 29 9-9 7 7 5-5 8 8" stroke="currentColor" stroke-width="1.5"/></svg><strong>Choisir une image</strong><span>ou la déposer ici</span></span>
           <img id="preview" alt="Aperçu de l’image sélectionnée" hidden>
+          <canvas id="selection-canvas" hidden aria-label="Sélection du document. Les coordonnées sont aussi réglables ci-dessous."></canvas>
           <span class="change-image" id="change-image" hidden>Changer d’image</span>
         </label>
         <p id="image-help" class="file-info">Une image à la fois, jusqu’à 20 millions de pixels.</p>
         <form id="ocr-form">
+          <fieldset id="adjustments" disabled>
+            <legend>Préparer l’image</legend>
+            <div class="tools"><button type="button" id="rotate">Tourner de 90°</button><button type="button" id="reset-selection">Image entière</button><span id="rotation-label">0°</span></div>
+            <label class="check"><input type="checkbox" id="crop-enabled"> Recadrer et redresser le document</label>
+            <div id="crop-tools" hidden>
+              <p class="hint">Placez les coins dans l’ordre : haut gauche, haut droit, bas droit, bas gauche. Vous pouvez ensuite déplacer les poignées.</p>
+              <button type="button" id="place-corners">Placer les quatre coins sur l’image</button>
+              <details><summary>Régler les coins au clavier</summary><div id="corner-inputs" class="corner-inputs"></div></details>
+            </div>
+            <div class="settings-grid"><label>Amélioration<select id="processing"><option value="original">Original — sans filtre</option><option value="contrast">Photo — contraste et bruit</option><option value="threshold">Noir et blanc adaptatif</option></select></label><label>Disposition du texte<select id="layout"><option value="auto">Automatique</option><option value="sparse">Texte dispersé / carte</option><option value="block">Bloc de texte</option><option value="line">Une seule ligne</option></select></label></div>
+            <label class="check"><input type="checkbox" id="deskew"> Corriger la légère inclinaison (±12°)</label>
+            <details class="zones"><summary>Reconnaître plusieurs zones séparément</summary><p class="hint">Recadrez une zone (nom, date…), indiquez son libellé et extrayez. Pour les zones suivantes, cochez « Ajouter au résultat existant » avant d’extraire.</p><label for="zone-name">Libellé de la zone</label><input id="zone-name" type="text" maxlength="80" placeholder="Ex. Nom"><label class="check"><input type="checkbox" id="append-result"> Ajouter au résultat existant</label></details>
+          </fieldset>
           <label for="language">Langue du document</label>
           <div class="extract-controls"><select id="language" name="language"><option value="fra">Français</option><option value="eng">Anglais</option><option value="fra+eng">Français + Anglais</option></select><button id="extract" class="primary" type="submit" disabled>Extraire le texte <span aria-hidden="true">→</span></button></div>
         </form>

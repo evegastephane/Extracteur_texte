@@ -1,4 +1,5 @@
 from threading import Lock
+import json
 from urllib.parse import urlsplit
 
 from flask import Flask, jsonify, render_template, request
@@ -65,7 +66,17 @@ def create_app(test_config=None):
             raise OCRError("busy", "Une extraction est déjà en cours. Réessayez dans un instant.", 429)
         try:
             language = request.form.get("language", "fra")
-            text = extract(image.read(MAX_BYTES + 1), language)
+            raw_options = request.form.get("options")
+            if raw_options is None:
+                text = extract(image.read(MAX_BYTES + 1), language)
+            else:
+                try:
+                    options = json.loads(raw_options)
+                except (ValueError, TypeError):
+                    raise OCRError("invalid_options", "Réglages d’image invalides.") from None
+                if not isinstance(options, dict):
+                    raise OCRError("invalid_options", "Réglages d’image invalides.")
+                text = extract(image.read(MAX_BYTES + 1), language, options)
             return jsonify(text=text, language=language)
         finally:
             ocr_lock.release()
