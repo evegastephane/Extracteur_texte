@@ -1,6 +1,13 @@
 "use strict";
 const $ = (id) => document.getElementById(id);
 const input = $("image"), preview = $("preview"), text = $("text"), status = $("status");
+let paddleAvailable = null;
+function updateEngine() {
+  const paddle = $("engine").value === "paddleocr";
+  $("language").disabled = busy || paddle;
+  $("layout").disabled = paddle;
+  $("engine-help").textContent = !paddle ? "Tesseract utilise la langue et la disposition choisies ci-dessous." : paddleAvailable === false ? "PaddleOCR n’est pas installé ou ses modèles ne sont pas prêts. Voir le guide PaddleOCR dans la documentation du projet. Tesseract reste disponible." : "PaddleOCR lit le français et l’anglais avec le même modèle latin. La disposition est détectée automatiquement. Le démarrage peut prendre jusqu’à 90 secondes.";
+}
 let selected = null, previewURL = null, busy = false;
 const canvas = $("selection-canvas"), ctx = canvas.getContext("2d");
 let sourceImage = null, rotation = 0, corners = fullCorners(), placing = -1, dragging = -1;
@@ -117,7 +124,7 @@ async function selectFile(file) {
     if (probe.naturalWidth * probe.naturalHeight > 20_000_000) throw new Error("L’image dépasse 20 millions de pixels. Réduisez ses dimensions.");
     selected = file;
     preview.src = url;
-    sourceImage = probe; canvas.hidden = false; $("adjustments").disabled = false; drawSelection();
+    sourceImage = probe; canvas.hidden = false; $("adjustments").disabled = false; drawSelection(); updateEngine();
     $("upload-content").hidden = true;
     $("change-image").hidden = false;
     $("image-help").textContent = `${file.name} · ${(file.size / 1024 / 1024).toLocaleString("fr-FR", {maximumFractionDigits: 2})} Mio`;
@@ -150,7 +157,9 @@ $("ocr-form").addEventListener("submit", async (event) => {
   const originalText = text.value, wasDisabled = text.disabled;
   const previous = $("append-result").checked ? originalText : "";
   const zoneName = $("zone-name").value.trim();
+  const engine = $("engine").value;
   busy = true;
+  $("engine").disabled = true;
   text.disabled = true; $("adjustments").disabled = true;
   input.disabled = true; $("language").disabled = true; $("extract").disabled = true;
   $("extract").textContent = "Extraction en cours…";
@@ -158,10 +167,11 @@ $("ocr-form").addEventListener("submit", async (event) => {
   updateActions();
   announce("Lecture de l’image en cours. Cela peut prendre quelques secondes.", "busy");
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 40000);
+  const timer = setTimeout(() => controller.abort(), engine === "paddleocr" ? 105000 : 40000);
   try {
     const form = new FormData();
     form.append("image", selected); form.append("language", $("language").value);
+    form.append("engine", engine);
     form.append("options", JSON.stringify({rotation, corners: $("crop-enabled").checked ? corners : null, mode: $("processing").value, layout: $("layout").value, deskew: $("deskew").checked}));
     const response = await fetch("/api/ocr", {method: "POST", body: form, signal: controller.signal});
     const data = await response.json();
@@ -177,11 +187,13 @@ $("ocr-form").addEventListener("submit", async (event) => {
   } finally {
     clearTimeout(timer);
     busy = false; input.disabled = false; $("language").disabled = false;
+    $("engine").disabled = false;
     $("adjustments").disabled = false;
     $("extract").disabled = !selected;
     $("extract").textContent = "Extraire le texte →";
     document.querySelector(".result").setAttribute("aria-busy", "false");
     updateActions();
+    updateEngine();
   }
 });
 text.addEventListener("input", updateActions);
@@ -204,3 +216,5 @@ $("download").addEventListener("click", () => {
 fetch("/health").then((response) => {
   if (!response.ok && !selected) announce("Le moteur OCR n’est pas prêt. Consultez le guide d’installation.", "error");
 }).catch(() => { if (!selected) announce("Le service local est indisponible. Vérifiez son démarrage.", "error"); });
+$("engine").addEventListener("change", updateEngine);
+fetch("/api/engines").then(response => response.json()).then(data => { paddleAvailable = data.paddleocr.ready; updateEngine(); }).catch(() => { paddleAvailable = null; });

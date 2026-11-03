@@ -25,6 +25,9 @@
         </label>
         <p id="image-help" class="file-info">Une image à la fois, jusqu’à 20 millions de pixels.</p>
         <form id="ocr-form">
+          <label for="engine">Moteur de reconnaissance</label>
+          <select id="engine"><option value="tesseract">Tesseract — léger</option><option value="paddleocr">PaddleOCR — optionnel</option></select>
+          <p id="engine-help" class="hint">Tesseract utilise la langue et la disposition choisies ci-dessous.</p>
           <fieldset id="adjustments" disabled>
             <legend>Préparer l’image</legend>
             <div class="tools"><button type="button" id="rotate">Tourner de 90°</button><button type="button" id="reset-selection">Image entière</button><span id="rotation-label">0°</span></div>
@@ -49,7 +52,7 @@
       </section>
     </div>
     <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Choisissez une image pour commencer.</p>
-    <footer><p>Vos documents restent ici. Aucun envoi à un service externe.</p><span>OCR local · Tesseract · Open source</span></footer>
+    <footer><p>Vos documents restent ici. Aucun envoi à un service externe.</p><span>OCR local · Tesseract / PaddleOCR · Open source</span></footer>
   </main>
 </body>
 </html>

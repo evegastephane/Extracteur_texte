@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-03T19:32:36Z",
+  "generatedAt": "2026-11-03T19:51:16Z",
   "title": "Design System: Extracteur",
   "extensions": {
     "colorMeta": {
@@ -73,6 +73,13 @@
       "coordinates": "Normalized 0–1 after EXIF orientation and requested rotation; keyboard fields display percentages.",
       "preview": "Geometry only; tonal filters are not previewed.",
       "interaction": "Drag numbered green handles or edit X/Y fields; rotating resets the selection."
+    },
+    "engineBehavior": {
+      "default": "tesseract",
+      "optional": "paddleocr",
+      "paddleControls": "Language and layout selects disabled; geometry and filters shared.",
+      "availabilityHint": "Explain missing installation/models without claiming model accuracy or verified inference.",
+      "failure": "Show the selected engine error without silent fallback and preserve previous editor text."
     }
   },
   "components": [
@@ -96,9 +103,9 @@
       "name": "Language selector",
       "kind": "input",
       "refersTo": "language",
-      "description": "Native document-language selection.",
+      "description": "Tesseract language selection; disabled with opacity .6 for PaddleOCR, which uses its Latin model. Layout selection is also disabled for PaddleOCR.",
       "html": "<label class=\"ds-language-label\">Langue du document <select class=\"ds-language\"><option>Français</option><option>Anglais</option><option>Français + Anglais</option></select></label>",
-      "css": ".ds-language-label{font:600 13px system-ui,sans-serif;color:var(--ink)}.ds-language{display:block;margin-top:9px;font:400 16px system-ui,sans-serif;min-height:46px;padding:8px 30px 8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}.ds-language:focus-visible{outline:3px solid var(--accent);outline-offset:4px}"
+      "css": ".ds-language-label{font:600 13px system-ui,sans-serif;color:var(--ink)}.ds-language{display:block;margin-top:9px;font:400 16px system-ui,sans-serif;min-height:46px;padding:8px 30px 8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}.ds-language:focus-visible{outline:3px solid var(--accent);outline-offset:4px}.ds-language:disabled{opacity:.6;cursor:not-allowed}"
     },
     {
       "name": "Upload target",
@@ -138,6 +145,14 @@
       "description": "Progressive disclosure for a zone label and explicit append choice; recognition runs in the application runtime.",
       "html": "<details class=\"ds-zones\"><summary>Reconnaître plusieurs zones séparément</summary><p>Recadrez une zone, indiquez son libellé et extrayez. Pour les zones suivantes, cochez « Ajouter au résultat existant » avant d’extraire.</p><label>Libellé de la zone<input type=\"text\" maxlength=\"80\" placeholder=\"Ex. Nom\"></label><label class=\"ds-append\"><input type=\"checkbox\"> Ajouter au résultat existant</label></details>",
       "css": ".ds-zones{margin-top:8px;color:var(--ink);font:12px/1.6 system-ui,sans-serif}.ds-zones summary{cursor:pointer;font-size:13px;padding:8px 0}.ds-zones p{margin:12px 0;color:var(--muted)}.ds-zones input[type=text]{display:block;width:100%;padding:9px;border:1px solid var(--line);border-radius:5px;font:inherit}.ds-append{display:flex;gap:9px;align-items:center;font-size:13px;margin:14px 0;line-height:1.5}.ds-append input{accent-color:var(--accent);width:17px;height:17px;flex-shrink:0}.ds-zones :focus-visible{outline:3px solid var(--accent);outline-offset:4px}"
+    },
+    {
+      "name": "Engine selector",
+      "kind": "input",
+      "refersTo": "engine",
+      "description": "Tesseract default with optional PaddleOCR and a muted behavior or missing-model hint. Runtime updates the hint and disables language/layout for PaddleOCR.",
+      "html": "<label class=\"ds-engine-label\">Moteur de reconnaissance<select class=\"ds-engine\" aria-describedby=\"ds-engine-help\"><option value=\"tesseract\">Tesseract — léger</option><option value=\"paddleocr\">PaddleOCR — optionnel</option></select></label><p id=\"ds-engine-help\" class=\"ds-engine-hint\">Tesseract utilise la langue et la disposition choisies ci-dessous.</p>",
+      "css": ".ds-engine-label{display:block;font:600 13px system-ui,sans-serif;color:var(--ink)}.ds-engine{display:block;width:100%;margin-top:9px;font:400 16px system-ui,sans-serif;min-height:46px;padding:8px 30px 8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}.ds-engine-hint{font:12px/1.6 system-ui,sans-serif;color:var(--muted);margin:12px 0 20px}.ds-engine:focus-visible{outline:3px solid var(--accent);outline-offset:4px}.ds-engine:disabled{opacity:.6;cursor:not-allowed}"
     }
   ],
   "narrative": {
@@ -160,7 +175,8 @@
       "Do keep extraction primary and copy/export secondary.",
       "Do preserve visible keyboard focus, clear disabled states and readable French instructions.",
       "Do keep source and result adjacent on desktop and sequential on mobile.",
-      "Do preserve keyboard coordinate editing, explicit append instructions and existing text after failed reruns."
+      "Do preserve keyboard coordinate editing, explicit append instructions and existing text after failed reruns.",
+      "Do keep optional-engine availability and errors explicit, preserving prior text on failure."
     ],
     "donts": [
       "Don't introduce external font requests or decorative shadows into this local, flat interface.",

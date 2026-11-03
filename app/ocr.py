@@ -10,6 +10,7 @@ import warnings
 from PIL import Image, ImageOps, UnidentifiedImageError
 import pytesseract
 from .preprocess import LAYOUTS, prepare, validate_options
+from .paddle_engine import PaddleFailure, recognize as recognize_paddle
 
 MAX_BYTES = 10 * 1024 * 1024
 MAX_PIXELS = 20_000_000
@@ -45,7 +46,9 @@ def readiness():
         return {"ready": False, "languages": []}
 
 
-def extract(data, language, options=None):
+def extract(data, language, options=None, engine="tesseract"):
+    if engine not in {"tesseract", "paddleocr"}:
+        raise OCRError("invalid_engine", "Choisissez Tesseract ou PaddleOCR.")
     try:
         options = validate_options(options or {})
     except (ValueError, TypeError):
@@ -76,6 +79,11 @@ def extract(data, language, options=None):
                             except ValueError as error:
                                 raise OCRError("invalid_selection", str(error)) from None
                             with processed:
+                                if engine == "paddleocr":
+                                    try:
+                                        return recognize_paddle(processed)
+                                    except PaddleFailure as error:
+                                        raise OCRError("paddle_timeout" if error.status == 504 else "paddle_unavailable", str(error), error.status) from None
                                 return pytesseract.image_to_string(
                                     processed, lang=language, timeout=30,
                                     config=f"--psm {LAYOUTS[options['layout']]}",

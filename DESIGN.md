@@ -69,6 +69,12 @@ components:
     textColor: "{colors.ink}"
     rounded: "{rounded.control}"
     padding: "8px 30px 8px 12px"
+  engine:
+    backgroundColor: "{colors.white}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.control}"
+    padding: "8px 30px 8px 12px"
+    width: "100%"
   preparation-field:
     backgroundColor: "{colors.white}"
     textColor: "{colors.ink}"
@@ -122,7 +128,8 @@ Use the workspace radius for the outer shared surface, upload radius for the ima
 
 - **Extraction button:** forest green with white text; minimum height 46px. Disabled controls have opacity .48 and a disallowed cursor.
 - **Result buttons:** compact outlined white controls; minimum height 40px, 13px text, soft hover fill.
-- **Language selector:** a native select with the three implemented French/English choices.
+- **Engine selector:** a full-width native select above preparation, using existing control tokens. Tesseract is the default; PaddleOCR is labeled optional. A muted hint explains language/layout behavior or missing installation/models, without suggesting validated accuracy or readiness. The control is disabled while extraction runs.
+- **Language selector:** a native select with the three implemented French/English choices. PaddleOCR disables it and the layout select because its Latin model and automatic segmentation apply. Disabled selects use opacity .6 and a disallowed cursor; geometry and filter controls remain shared.
 - **Upload target:** an accessible file label with centered instructions, hover/drag tint and image preview. Keyboard focus outlines the target.
 - **Image preparation:** native selects and green-accent checkboxes extend the existing control language. Compact rotation/reset buttons precede the orientation canvas. Four numbered green handles are draggable; percentage X/Y fields offer keyboard editing in clockwise order. Rotation resets the selection. The canvas previews geometry, not tonal filters.
 - **Preparation fields:** thin outlined inputs use the field radius; coordinate fields have minimum height 40px. Photo/Original/adaptive threshold, optional ±12° deskew and auto/block/sparse/line layout remain explicitly selectable.
@@ -138,6 +145,7 @@ Button and upload color transitions use .18s ease-out; the busy indicator rotate
 - **Do** preserve visible keyboard focus, clear disabled states and readable French instructions.
 - **Do** keep source and result adjacent on desktop and sequential on mobile.
 - **Do** preserve keyboard coordinate editing, explicit append instructions and existing text after failed reruns.
+- **Do** keep optional-engine availability and errors explicit, preserving prior text on failure.
 - **Don't** introduce external font requests or decorative shadows into this local, flat interface.
 - **Don't** hide editing, copy or export behind an extra screen.
 

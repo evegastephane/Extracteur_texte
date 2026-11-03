@@ -59,6 +59,7 @@ def samples():
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--engine", choices=("tesseract", "paddleocr"), default="tesseract")
     parser.add_argument("--output", type=Path, default=Path(".test-artifacts/benchmark.json"))
     args = parser.parse_args()
     results = []
@@ -68,11 +69,11 @@ def main():
         record = {"sample": name, "reference": REFERENCE, "options": options}
         for label, settings in (("baseline", {}), ("prepared", options)):
             start = time.perf_counter()
-            actual = extract(stream.getvalue(), "fra", settings)
+            actual = extract(stream.getvalue(), "fra", settings, engine=args.engine)
             record[label] = {"text": actual, "cer": round(character_error(REFERENCE, actual), 4), "seconds": round(time.perf_counter() - start, 3)}
         results.append(record)
         print(f"{name}: CER {record['baseline']['cer']:.1%} -> {record['prepared']['cer']:.1%}")
-    summary = {"kind": "synthetic", "environment": {"python": platform.python_version(), "tesseract": str(pytesseract.get_tesseract_version()), "opencv": cv2.__version__, "numpy": np.__version__}, "note": "Known manual geometry corrections; results are not a claim about real identity cards. Font and Tesseract versions affect scores.",
+    summary = {"kind": "synthetic", "engine": args.engine, "environment": {"python": platform.python_version(), "tesseract": str(pytesseract.get_tesseract_version()), "opencv": cv2.__version__, "numpy": np.__version__}, "note": "Known manual geometry corrections; results are not a claim about real identity cards. Font and engine versions affect scores. PaddleOCR uses automatic layout, ignoring Tesseract PSM settings.",
         "samples": results, "mean_cer": {label: round(sum(item[label]["cer"] for item in results) / len(results), 4) for label in ("baseline", "prepared")}}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

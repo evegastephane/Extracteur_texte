@@ -52,6 +52,8 @@ Le script installe les dépendances Python et télécharge les données officiel
 
 Les nouveaux outils permettent de tourner l’image, sélectionner quatre coins pour recadrer et redresser, améliorer le contraste, réduire le bruit, appliquer un seuillage adaptatif et corriger une légère inclinaison. Les modes automatique, bloc, texte dispersé et ligne permettent d’adapter Tesseract au document. Plusieurs zones peuvent être extraites manuellement et ajoutées au résultat avec un libellé. Voir le [guide de précision et de mesure](docs/ACCURACY.md).
 
+**PaddleOCR est disponible en option**, dans un environnement séparé avec deux modèles locaux français/anglais. Voir le [guide PaddleOCR pour Windows et Linux](docs/PADDLEOCR.md). Son installation est plus lourde ; elle n’est pas requise pour utiliser Tesseract. L’intégration et l’import des bibliothèques ont été testés, mais la reconnaissance réelle PaddleOCR reste à valider : le téléchargement des modèles est bloqué dans l’environnement cloud.
+
 Une image à la fois. Le texte imprimé net donne les meilleurs résultats ; les manuscrits, tableaux complexes et photos floues ne sont pas pris en charge de manière fiable. Une reconnaissance vide est signalée. Le traitement est limité à 30 secondes ; un nouvel import efface le résultat précédent.
 
 Les images transitent uniquement entre le navigateur et le serveur local. Le moteur utilise des fichiers temporaires supprimés par pytesseract en succès comme en échec. L’application ne conserve ni historique ni contenu dans ses journaux. Le texte reste dans la page jusqu’au nouvel import ou à sa fermeture, sauf copie ou export volontaire.

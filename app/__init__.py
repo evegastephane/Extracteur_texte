@@ -6,6 +6,7 @@ from flask import Flask, jsonify, render_template, request
 from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 
 from .ocr import MAX_BYTES, OCRError, extract, readiness
+from .paddle_engine import status as paddle_status
 
 
 def create_app(test_config=None):
@@ -66,8 +67,19 @@ def create_app(test_config=None):
             raise OCRError("busy", "Une extraction est déjà en cours. Réessayez dans un instant.", 429)
         try:
             language = request.form.get("language", "fra")
+            engine = request.form.get("engine", "tesseract")
+            if engine not in {"tesseract", "paddleocr"}:
+                raise OCRError("invalid_engine", "Choisissez Tesseract ou PaddleOCR.")
             raw_options = request.form.get("options")
-            if raw_options is None:
+            if engine == "paddleocr":
+                try:
+                    options = json.loads(raw_options) if raw_options is not None else {}
+                except ValueError:
+                    raise OCRError("invalid_options", "Réglages d’image invalides.") from None
+                if not isinstance(options, dict):
+                    raise OCRError("invalid_options", "Réglages d’image invalides.")
+                text = extract(image.read(MAX_BYTES + 1), language, options, engine=engine)
+            elif raw_options is None:
                 text = extract(image.read(MAX_BYTES + 1), language)
             else:
                 try:
@@ -80,6 +92,10 @@ def create_app(test_config=None):
             return jsonify(text=text, language=language)
         finally:
             ocr_lock.release()
+
+    @app.get("/api/engines")
+    def engines():
+        return jsonify(tesseract=readiness(), paddleocr=paddle_status())
 
     @app.errorhandler(OCRError)
     def ocr_error(error):
