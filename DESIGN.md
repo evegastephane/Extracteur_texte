@@ -1,6 +1,6 @@
 ---
 name: Extracteur
-description: A local OCR workbench in paper and forest green, extracted from the implemented interface.
+description: A local seven-field extraction workbench in paper and forest green.
 colors:
   paper: "#f6f5f0"
   ink: "#202c28"
@@ -80,6 +80,12 @@ components:
     textColor: "{colors.ink}"
     rounded: "{rounded.field}"
     height: "40px"
+  retained-field:
+    backgroundColor: "{colors.white}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.control}"
+    padding: "10px"
+    height: "44px"
   editor:
     backgroundColor: "{colors.white}"
     textColor: "{colors.ink}"
@@ -92,7 +98,7 @@ components:
 
 **Creative North Star: "Paper and forest-green workbench"** — a description of the implemented interface, not a separately established user preference.
 
-The quiet paper background frames a white work surface. A serif introduction gives the page character; system typography keeps the image controls and editable result familiar. The image and text form a single working area, with forest green identifying the extraction action and interactive cues.
+The quiet paper background frames a white work surface. A serif introduction gives the page character; system typography keeps the image controls and seven editable fields familiar. The image and retained fields form a single working area, with forest green identifying the recognition action and interactive cues. The main heading is “De l’image aux champs.”
 
 **Key characteristics:** paired source/result panels, restrained borders, local fonts, direct French instructions.
 
@@ -108,13 +114,13 @@ Forest green (`accent`) identifies extraction, upload cues, the local indicator 
 
 ## Typography
 
-The display serif appears in the main heading; the bracketed brand mark also uses Georgia. System sans-serif serves controls, prose and extracted text without external font requests. Section titles use the title token; form labels use the label token. Introductory prose is slightly larger (17px, line height 1.6, maximum 70ch); mobile reduces it to 15px. The editor uses body size with generous line height (1.8).
+The display serif appears in the main heading; the bracketed brand mark also uses Georgia. System sans-serif serves controls, prose and extracted text without external font requests. Section titles use the title token; form labels use the label token. Introductory prose is slightly larger (17px, line height 1.6, maximum 70ch); mobile reduces it to 15px. The read-only summary uses 14px text with generous line height (1.8); retained-field labels are 13px and evidence/status notes are 11px.
 
 ## Layout
 
 The header and main area share a centered maximum width (1280px), with desktop horizontal padding from `desktop`. The workspace grid pairs source and result in a 1:1.12 ratio, separated by a border; panel padding uses `panel`.
 
-At widths up to 760px, panels stack source first, padding uses `mobile`, the divider becomes horizontal, and the language/action row stacks. The empty upload area reduces from 285px to 235px; once preparation is enabled it is 340px, reducing to 260px up to 420px. The editor minimum reduces from 315px to 260px. Result actions wrap; the footer stacks. Preparation settings use two columns, stacking up to 420px; corner-coordinate groups use two columns. Optional keyboard coordinates and multiple-zone controls use native disclosures below the image tools.
+At widths up to 760px, panels stack source first, padding uses `mobile`, the divider becomes horizontal, and the language/action row stacks. The empty upload area reduces from 285px to 235px; once preparation is enabled it is 340px, reducing to 260px up to 420px. The retained fields use a two-column grid with gaps of 18px vertically and 16px horizontally, becoming one column up to 760px. The summary has a minimum height of 180px. Result actions wrap; the footer stacks. Preparation settings use two columns, stacking up to 420px; corner-coordinate groups use two columns. Optional keyboard coordinates use a native disclosure below the image tools; the read-only filtered summary has its own disclosure beneath the seven fields.
 
 ## Elevation & Depth
 
@@ -126,15 +132,15 @@ Use the workspace radius for the outer shared surface, upload radius for the ima
 
 ## Components
 
-- **Extraction button:** forest green with white text; minimum height 46px. Disabled controls have opacity .48 and a disallowed cursor.
-- **Result buttons:** compact outlined white controls; minimum height 40px, 13px text, soft hover fill.
+- **Extraction button:** “Repérer les champs”, forest green with white text; minimum height 46px. Disabled controls have opacity .48 and a disallowed cursor.
+- **Result buttons:** compact outlined white copy/TXT/JSON controls; minimum height 40px, 13px text, soft hover fill. Outputs are restricted to the seven retained field keys.
 - **Engine selector:** a full-width native select above preparation, using existing control tokens. Tesseract is the default; PaddleOCR is labeled optional. A muted hint explains language/layout behavior or missing installation/models, without suggesting validated accuracy or readiness. The control is disabled while extraction runs.
 - **Language selector:** a native select with the three implemented French/English choices. PaddleOCR disables it and the layout select because its Latin model and automatic segmentation apply. Disabled selects use opacity .6 and a disallowed cursor; geometry and filter controls remain shared.
 - **Upload target:** an accessible file label with centered instructions, hover/drag tint and image preview. Keyboard focus outlines the target.
 - **Image preparation:** native selects and green-accent checkboxes extend the existing control language. Compact rotation/reset buttons precede the orientation canvas. Four numbered green handles are draggable; percentage X/Y fields offer keyboard editing in clockwise order. Rotation resets the selection. The canvas previews geometry, not tonal filters.
 - **Preparation fields:** thin outlined inputs use the field radius; coordinate fields have minimum height 40px. Photo/Original/adaptive threshold, optional ±12° deskew and auto/block/sparse/line layout remain explicitly selectable.
-- **Manual zones:** a native disclosure groups the zone label and explicit append checkbox, with an instruction to enable append for subsequent zones.
-- **Editor:** a borderless, vertically resizable white textarea. It starts disabled with explanatory text and becomes editable after recognition. A failed rerun restores prior text and edits; successful reruns replace it unless append is checked.
+- **Retained fields:** exactly seven labeled editable inputs with control radius, white fill, thin border and minimum height 44px. Muted notes beneath each input explain proposed/missing/ambiguous values and field-specific evidence; manual edits are identified. Never present an invented confidence percentage.
+- **Filtered summary:** a borderless, vertically resizable read-only textarea in a native disclosure. It reflects only filled retained fields; users edit the fields above. Successful extraction replaces all seven propositions; failure preserves corrections. Free-form zone append controls are absent.
 - **Status:** a reserved message area below the workspace, with a spinning busy indicator and error color when needed. Status updates are announced politely.
 
 Button and upload color transitions use .18s ease-out; the busy indicator rotates over .8s. Reduced-motion preference removes transitions and animation.
@@ -144,7 +150,8 @@ Button and upload color transitions use .18s ease-out; the busy indicator rotate
 - **Do** keep extraction visually primary and copy/export secondary.
 - **Do** preserve visible keyboard focus, clear disabled states and readable French instructions.
 - **Do** keep source and result adjacent on desktop and sequential on mobile.
-- **Do** preserve keyboard coordinate editing, explicit append instructions and existing text after failed reruns.
+- **Do** preserve keyboard coordinate editing, field-specific evidence and corrections after failed reruns.
+- **Do** keep the result surface and normal exports restricted to the seven fields; raw OCR belongs only to the explicit technical compatibility mode.
 - **Do** keep optional-engine availability and errors explicit, preserving prior text on failure.
 - **Don't** introduce external font requests or decorative shadows into this local, flat interface.
 - **Don't** hide editing, copy or export behind an extra screen.

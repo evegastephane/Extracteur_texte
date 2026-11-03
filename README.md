@@ -1,6 +1,6 @@
 # Extracteur de texte
 
-Une application locale et légère pour récupérer le texte d’une image PNG ou JPEG. Interface en français, OCR français/anglais, résultat modifiable, copie et export `.txt` UTF-8. Fonctionne hors ligne après installation, sans compte ni API d’IA externe.
+Une application locale pour repérer **sept champs par libellés et règles** dans une image PNG/JPEG : nom, prénoms, date et lieu de naissance, sexe, taille et profession. Les autres informations sont écartées du résultat. Interface en français, champs modifiables, copie et exports TXT/JSON. Sans entraînement de modèle d’extraction ni API d’IA externe.
 
 ## Installation
 
@@ -47,16 +47,16 @@ Le script installe les dépendances Python et télécharge les données officiel
 ## Utilisation
 
 1. Choisir ou déposer une image PNG/JPEG, jusqu’à 10 Mio et 20 millions de pixels.
-2. Sélectionner la langue et lancer l’extraction.
-3. Relire et corriger le résultat, puis le copier ou l’exporter.
+2. Choisir le moteur et les réglages, conserver les libellés dans le recadrage et lancer **Repérer les champs**.
+3. Relire les sept propositions, corriger ou compléter les champs, puis copier ou exporter le résultat filtré en TXT/JSON. Les champs absents restent vides et les ambiguïtés sont signalées.
 
-Les nouveaux outils permettent de tourner l’image, sélectionner quatre coins pour recadrer et redresser, améliorer le contraste, réduire le bruit, appliquer un seuillage adaptatif et corriger une légère inclinaison. Les modes automatique, bloc, texte dispersé et ligne permettent d’adapter Tesseract au document. Plusieurs zones peuvent être extraites manuellement et ajoutées au résultat avec un libellé. Voir le [guide de précision et de mesure](docs/ACCURACY.md).
+Les outils permettent de tourner l’image, sélectionner quatre coins pour recadrer et redresser, améliorer le contraste, réduire le bruit, appliquer un seuillage adaptatif et corriger une légère inclinaison. Les modes automatique, bloc, texte dispersé et ligne permettent d’adapter Tesseract au document. Le [guide des champs et règles](docs/FIELDS.md) décrit les libellés, la recherche à droite/en dessous et les limites. Voir aussi le [guide de préparation d’image](docs/ACCURACY.md).
 
 **PaddleOCR est disponible en option**, dans un environnement séparé avec deux modèles locaux français/anglais. Voir le [guide PaddleOCR pour Windows et Linux](docs/PADDLEOCR.md). Son installation est plus lourde ; elle n’est pas requise pour utiliser Tesseract. L’intégration et l’import des bibliothèques ont été testés, mais la reconnaissance réelle PaddleOCR reste à valider : le téléchargement des modèles est bloqué dans l’environnement cloud.
 
-Une image à la fois. Le texte imprimé net donne les meilleurs résultats ; les manuscrits, tableaux complexes et photos floues ne sont pas pris en charge de manière fiable. Une reconnaissance vide est signalée. Le traitement est limité à 30 secondes ; un nouvel import efface le résultat précédent.
+Une image à la fois. Le texte imprimé net donne les meilleurs résultats ; les manuscrits, tableaux complexes et photos floues ne sont pas pris en charge de manière fiable. Sans libellé reconnu, aucun champ n’est deviné. Le traitement Tesseract est limité à 30 secondes (90 secondes pour PaddleOCR) ; un nouvel import efface le résultat précédent.
 
-Les images transitent uniquement entre le navigateur et le serveur local. Le moteur utilise des fichiers temporaires supprimés par pytesseract en succès comme en échec. L’application ne conserve ni historique ni contenu dans ses journaux. Le texte reste dans la page jusqu’au nouvel import ou à sa fermeture, sauf copie ou export volontaire.
+Les images transitent uniquement entre le navigateur et le serveur local. Les fichiers temporaires sont supprimés après traitement, même en échec. L’application ne conserve ni historique ni contenu dans ses journaux. Le texte intégral OCR n’est pas renvoyé dans le parcours des sept champs. Les champs retenus restent dans la page jusqu’au nouvel import ou à sa fermeture, sauf copie ou export volontaire.
 
 Tesseract utilise des modèles OCR spécialisés, notamment neuronaux : aucun modèle génératif, chatbot ou service distant n’est intégré.
 

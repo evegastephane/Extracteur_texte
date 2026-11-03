@@ -16,7 +16,7 @@ def create_app(test_config=None):
         # Werkzeug's multipart decoder buffers file chunks too. A 16 KiB
         # limit rejected ordinary uploads before the 10 MiB file check.
         MAX_FORM_MEMORY_SIZE=512 * 1024,
-        MAX_FORM_PARTS=4,
+        MAX_FORM_PARTS=5,
         TRUSTED_HOSTS=["127.0.0.1", "localhost", "[::1]"],
     )
     if test_config:
@@ -71,13 +71,19 @@ def create_app(test_config=None):
             if engine not in {"tesseract", "paddleocr"}:
                 raise OCRError("invalid_engine", "Choisissez Tesseract ou PaddleOCR.")
             raw_options = request.form.get("options")
-            if engine == "paddleocr":
+            structured = request.form.get("structured", "true")
+            if structured not in {"true", "false"}:
+                raise OCRError("invalid_options", "Mode d’extraction invalide.")
+            if structured == "true" or engine == "paddleocr":
                 try:
                     options = json.loads(raw_options) if raw_options is not None else {}
                 except ValueError:
                     raise OCRError("invalid_options", "Réglages d’image invalides.") from None
                 if not isinstance(options, dict):
                     raise OCRError("invalid_options", "Réglages d’image invalides.")
+                if structured == "true":
+                    result = extract(image.read(MAX_BYTES + 1), language, options, engine=engine, structured=True)
+                    return jsonify(**result, language=language, engine=engine)
                 text = extract(image.read(MAX_BYTES + 1), language, options, engine=engine)
             elif raw_options is None:
                 text = extract(image.read(MAX_BYTES + 1), language)

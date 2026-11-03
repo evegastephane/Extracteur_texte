@@ -36,7 +36,7 @@ def image_bytes(content="Bonjour le monde", fmt="PNG", size=(1000, 240)):
 
 
 def post(client, data, language="fra"):
-    return client.post("/api/ocr", data={"image": (io.BytesIO(data), "image.png"), "language": language})
+    return client.post("/api/ocr", data={"image": (io.BytesIO(data), "image.png"), "language": language, "structured": "false"})
 
 
 def test_page_and_health(client):

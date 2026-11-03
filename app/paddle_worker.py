@@ -5,6 +5,23 @@ from pathlib import Path
 import sys
 
 
+def collect_results(results):
+    lines, tokens = [], []
+    for result in results:
+        texts = result.get("rec_texts")
+        polygons = result.get("rec_polys")
+        if not isinstance(texts, list) or any(not isinstance(text, str) for text in texts):
+            raise ValueError("Unsupported PaddleOCR output")
+        lines.extend(texts)
+        if polygons is None or len(polygons) != len(texts):
+            raise ValueError("PaddleOCR boxes unavailable")
+        for text, polygon in zip(texts, polygons):
+            points = polygon.tolist() if hasattr(polygon, "tolist") else polygon
+            xs, ys = [float(point[0]) for point in points], [float(point[1]) for point in points]
+            tokens.append({"text": text, "box": [min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys)]})
+    return {"text": "\n".join(lines), "tokens": tokens}
+
+
 def main():
     image, output, models = map(Path, sys.argv[1:4])
     # No remote models, orientation classifiers, or unwarping downloads at runtime.
@@ -23,14 +40,8 @@ def main():
         use_textline_orientation=False,
         device="cpu", cpu_threads=2, enable_mkldnn=False,
     )
-    lines = []
-    for result in pipeline.predict(str(image)):
-        # PaddleOCR 3.x returns OCRResult mappings in page reading order.
-        texts = result.get("rec_texts")
-        if not isinstance(texts, list) or any(not isinstance(text, str) for text in texts):
-            raise ValueError("Unsupported PaddleOCR output")
-        lines.extend(texts)
-    output.write_text(json.dumps({"text": "\n".join(lines)}, ensure_ascii=False), encoding="utf-8")
+    payload = collect_results(pipeline.predict(str(image)))
+    output.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
 
 if __name__ == "__main__":

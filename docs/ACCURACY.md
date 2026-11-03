@@ -12,11 +12,11 @@ Les outils ci-dessous fonctionnent localement avec Pillow, OpenCV et Tesseract, 
 
 **Image entière** désactive la sélection et restaure ses coins, sans changer la rotation ni les filtres. Une rotation réinitialise les coins afin d’éviter d’appliquer une ancienne sélection à une autre orientation. Une sélection croisée ou trop petite est refusée avec un message.
 
-## Lire les zones séparément
+## Conserver les libellés dans la sélection
 
-Recadrer autour d’un seul champ, par exemple le nom, et choisir **Une seule ligne** si adapté. Ouvrir **Reconnaître plusieurs zones séparément**, indiquer un libellé et lancer l’extraction. Pour les champs suivants, cocher **Ajouter au résultat existant**, déplacer les coins et changer le libellé. Le texte s’ajoute à la zone éditable ; copier et exporter récupèrent le texte complet, avec les corrections.
+Le parcours actuel recherche uniquement les [sept champs par libellés et règles](FIELDS.md). Recadrer autour du document ou d’une zone contenant à la fois le libellé et sa valeur. Une valeur seule, sans `NOM/SURNAME` par exemple, n’est pas attribuée automatiquement à un champ.
 
-Il s’agit d’une sélection manuelle de zones, pas d’une reconnaissance automatique du type de carte ou de ses champs. Il n’y a aucune identification de la personne représentée. Importer une nouvelle image efface le résultat et les libellés ; décocher l’ajout remplace le texte lors de la prochaine extraction.
+L’ancien ajout libre de zones n’est plus affiché, afin de ne conserver que les sept informations demandées. Il n’y a aucune identification de la personne représentée. Une nouvelle extraction réussie remplace les champs ; une nouvelle image efface le résultat précédent.
 
 ## Traitement et limites
 
@@ -65,4 +65,4 @@ Pour une évaluation réelle, utiliser uniquement des documents dont l’usage e
 }
 ```
 
-Les coordonnées sont normalisées entre 0 et 1, relatives à l’image après correction EXIF et rotation. `corners: null` traite l’image entière. L’omission d’`options` conserve le comportement original. Les réglages invalides produisent HTTP 400. L’accumulation et les libellés des zones sont gérés dans le navigateur, sans stockage serveur.
+Les coordonnées sont normalisées entre 0 et 1, relatives à l’image après correction EXIF et rotation. `corners: null` traite l’image entière. L’omission d’`options` conserve l’image sans filtre. Les réglages invalides produisent HTTP 400. Par défaut, la réponse ne contient que les sept champs et leur résumé ; voir [le contrat actuel](FIELDS.md).

@@ -1,6 +1,7 @@
 """Isolated optional PaddleOCR worker, with local models and bounded lifetime."""
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -50,7 +51,7 @@ def status():
             "message": "Modèles locaux prêts." if ready else "Installation optionnelle requise : consultez le guide PaddleOCR."}
 
 
-def recognize(image):
+def recognize(image, structured=False):
     if not status()["ready"]:
         raise PaddleFailure("PaddleOCR n’est pas préparé. Suivez le guide PaddleOCR, puis réessayez.")
     with tempfile.TemporaryDirectory(prefix="extracteur_paddle_") as directory:
@@ -71,6 +72,16 @@ def recognize(image):
             payload = json.loads((folder / "result.json").read_text(encoding="utf-8"))
             if not isinstance(payload.get("text"), str):
                 raise ValueError()
+            if structured:
+                tokens = payload.get("tokens")
+                if not isinstance(tokens, list):
+                    raise ValueError()
+                for token in tokens:
+                    if not isinstance(token.get("text"), str) or len(token.get("box", [])) != 4:
+                        raise ValueError()
+                    if any(type(value) not in (float, int) or not math.isfinite(value) for value in token["box"]):
+                        raise ValueError()
+                return payload
             return payload["text"].strip()
-        except (OSError, ValueError, AttributeError):
+        except (OSError, ValueError, TypeError, KeyError, AttributeError):
             raise PaddleFailure("PaddleOCR a renvoyé un résultat illisible. Réessayez ou choisissez Tesseract.") from None

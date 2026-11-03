@@ -38,7 +38,7 @@ def test_paddle_dispatch_applies_geometry(monkeypatch):
     received = []
     monkeypatch.setattr("app.ocr.recognize_paddle", lambda image: received.append(image.size) or "Texte Paddle")
     client = create_app().test_client()
-    response = client.post("/api/ocr", data={"image": (io.BytesIO(image_bytes()), "photo.png"), "engine": "paddleocr", "options": json.dumps({"rotation": 90})})
+    response = client.post("/api/ocr", data={"image": (io.BytesIO(image_bytes()), "photo.png"), "engine": "paddleocr", "structured": "false", "options": json.dumps({"rotation": 90})})
     assert response.status_code == 200
     assert response.json["text"] == "Texte Paddle"
     assert received == [(240, 1000)]

@@ -11,6 +11,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 import pytesseract
 from .preprocess import LAYOUTS, prepare, validate_options
 from .paddle_engine import PaddleFailure, recognize as recognize_paddle
+from .fields import extract_fields, selected_text
 
 MAX_BYTES = 10 * 1024 * 1024
 MAX_PIXELS = 20_000_000
@@ -46,7 +47,7 @@ def readiness():
         return {"ready": False, "languages": []}
 
 
-def extract(data, language, options=None, engine="tesseract"):
+def extract(data, language, options=None, engine="tesseract", structured=False):
     if engine not in {"tesseract", "paddleocr"}:
         raise OCRError("invalid_engine", "Choisissez Tesseract ou PaddleOCR.")
     try:
@@ -81,9 +82,20 @@ def extract(data, language, options=None, engine="tesseract"):
                             with processed:
                                 if engine == "paddleocr":
                                     try:
+                                        if structured:
+                                            payload = recognize_paddle(processed, structured=True)
+                                            fields = extract_fields(payload["tokens"], *processed.size)
+                                            return {"text": selected_text(fields), "fields": fields}
                                         return recognize_paddle(processed)
                                     except PaddleFailure as error:
                                         raise OCRError("paddle_timeout" if error.status == 504 else "paddle_unavailable", str(error), error.status) from None
+                                if structured:
+                                    recognized = pytesseract.image_to_data(processed, lang=language, timeout=30,
+                                        config=f"--psm {LAYOUTS[options['layout']]}", output_type=pytesseract.Output.DICT)
+                                    tokens = [{"text": word.strip(), "box": [int(recognized[key][i]) for key in ("left", "top", "width", "height")]}
+                                              for i, word in enumerate(recognized["text"]) if word.strip()]
+                                    fields = extract_fields(tokens, *processed.size)
+                                    return {"text": selected_text(fields), "fields": fields}
                                 return pytesseract.image_to_string(
                                     processed, lang=language, timeout=30,
                                     config=f"--psm {LAYOUTS[options['layout']]}",

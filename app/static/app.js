@@ -9,6 +9,34 @@ function updateEngine() {
   $("engine-help").textContent = !paddle ? "Tesseract utilise la langue et la disposition choisies ci-dessous." : paddleAvailable === false ? "PaddleOCR n’est pas installé ou ses modèles ne sont pas prêts. Voir le guide PaddleOCR dans la documentation du projet. Tesseract reste disponible." : "PaddleOCR lit le français et l’anglais avec le même modèle latin. La disposition est détectée automatiquement. Le démarrage peut prendre jusqu’à 90 secondes.";
 }
 let selected = null, previewURL = null, busy = false;
+let retainedFields = null, retainedEngine = null;
+const fieldNames = {nom: "Nom", prenoms: "Prénoms", date_naissance: "Date de naissance", lieu_naissance: "Lieu de naissance", sexe: "Sexe", taille: "Taille", profession: "Profession"};
+const fieldInputs = {};
+for (const [key, labelText] of Object.entries(fieldNames)) {
+  const group = document.createElement("div"); group.className = "retained-field";
+  const label = document.createElement("label"); label.htmlFor = `field-${key}`; label.textContent = labelText;
+  const field = document.createElement("input"); field.type = "text"; field.id = `field-${key}`; field.maxLength = 200;
+  field.autocomplete = "off"; field.spellcheck = false; field.setAttribute("aria-describedby", `field-note-${key}`);
+  const note = document.createElement("small"); note.id = `field-note-${key}`;
+  field.addEventListener("input", () => { note.textContent = "Modifié manuellement — à vérifier."; updateRetainedText(); });
+  group.append(label, field, note); $("field-list").append(group); fieldInputs[key] = field;
+}
+function updateRetainedText() {
+  text.value = Object.entries(fieldNames).filter(([key]) => fieldInputs[key].value.trim()).map(([key, label]) => `${label} : ${fieldInputs[key].value.trim()}`).join("\n");
+  updateActions();
+}
+function showFields(fields, engine = null) {
+  retainedFields = fields; retainedEngine = engine;
+  $("fields").hidden = !fields; $("fields").disabled = busy || !fields;
+  for (const key of Object.keys(fieldNames)) {
+    const field = fields?.[key]; fieldInputs[key].value = field?.value || "";
+    const note = $(`field-note-${key}`);
+    note.textContent = field?.message || "";
+    if (field?.evidence?.length > 1) note.textContent += " Propositions : " + field.evidence.map(item => item.value).join(" / ");
+    else if (field?.evidence?.length === 1) note.textContent += ` Libellé « ${field.evidence[0].label} », valeur à ${field.evidence[0].relation === "droite" ? "droite" : "la ligne suivante"}.`;
+  }
+  updateRetainedText();
+}
 const canvas = $("selection-canvas"), ctx = canvas.getContext("2d");
 let sourceImage = null, rotation = 0, corners = fullCorners(), placing = -1, dragging = -1;
 function fullCorners() { return [[0, 0], [1, 0], [1, 1], [0, 1]]; }
@@ -85,7 +113,9 @@ function updateActions() {
   const available = !busy && text.value.length > 0;
   $("copy").disabled = !available;
   $("download").disabled = !available;
-  $("count").textContent = text.disabled ? "Prêt à être extrait" : `${text.value.length.toLocaleString("fr-FR")} caractères`;
+  $("download-json").disabled = busy || !retainedFields;
+  const count = Object.values(fieldInputs).filter(field => field.value.trim()).length;
+  $("count").textContent = retainedFields ? `${count}/7 champs renseignés` : "En attente d’une image";
 }
 function clearImage() {
   if (previewURL) URL.revokeObjectURL(previewURL);
@@ -94,7 +124,7 @@ function clearImage() {
   sourceImage = null; rotation = 0; corners = fullCorners(); placing = -1;
   canvas.hidden = true; $("adjustments").disabled = true;
   $("crop-enabled").checked = false; $("crop-tools").hidden = true;
-  $("zone-name").value = ""; $("append-result").checked = false;
+  showFields(null);
   preview.removeAttribute("src");
   preview.hidden = true;
   $("upload-content").hidden = false;
@@ -155,12 +185,11 @@ $("ocr-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!selected || busy) return;
   const originalText = text.value, wasDisabled = text.disabled;
-  const previous = $("append-result").checked ? originalText : "";
-  const zoneName = $("zone-name").value.trim();
   const engine = $("engine").value;
   busy = true;
   $("engine").disabled = true;
   text.disabled = true; $("adjustments").disabled = true;
+  $("fields").disabled = true;
   input.disabled = true; $("language").disabled = true; $("extract").disabled = true;
   $("extract").textContent = "Extraction en cours…";
   document.querySelector(".result").setAttribute("aria-busy", "true");
@@ -172,15 +201,16 @@ $("ocr-form").addEventListener("submit", async (event) => {
     const form = new FormData();
     form.append("image", selected); form.append("language", $("language").value);
     form.append("engine", engine);
+    form.append("structured", "true");
     form.append("options", JSON.stringify({rotation, corners: $("crop-enabled").checked ? corners : null, mode: $("processing").value, layout: $("layout").value, deskew: $("deskew").checked}));
     const response = await fetch("/api/ocr", {method: "POST", body: form, signal: controller.signal});
     const data = await response.json();
     if (!response.ok) throw new Error(data.error?.message || "L’extraction a échoué. Réessayez.");
-    const part = data.text && zoneName ? `${zoneName} :\n${data.text}` : data.text;
-    text.value = [previous, part].filter(Boolean).join("\n\n");
+    if (!data.fields) throw new Error("La version du serveur ne fournit pas les champs. Mettez à jour puis redémarrez l’application.");
+    showFields(data.fields, data.engine);
     text.disabled = false;
-    announce(data.text ? "Texte extrait. Relisez-le : la reconnaissance peut comporter des erreurs." : "Aucun texte détecté. Essayez une image plus nette ou une autre langue.");
-    text.focus();
+    announce(data.text ? "Champs repérés. Vérifiez les propositions ; les autres informations sont écartées." : "Aucun des sept champs n’a été repéré avec une valeur. Vérifiez l’image ou renseignez les champs manuellement.");
+    fieldInputs.nom.focus();
   } catch (error) {
     text.value = originalText; text.disabled = wasDisabled;
     announce(error.name === "AbortError" ? "Le délai d’attente est dépassé. Réessayez avec une image plus petite." : error.message === "Failed to fetch" ? "Le service local ne répond pas. Vérifiez qu’il est démarré, puis réessayez." : error.message, "error");
@@ -189,8 +219,9 @@ $("ocr-form").addEventListener("submit", async (event) => {
     busy = false; input.disabled = false; $("language").disabled = false;
     $("engine").disabled = false;
     $("adjustments").disabled = false;
+    $("fields").disabled = !retainedFields;
     $("extract").disabled = !selected;
-    $("extract").textContent = "Extraire le texte →";
+    $("extract").textContent = "Repérer les champs →";
     document.querySelector(".result").setAttribute("aria-busy", "false");
     updateActions();
     updateEngine();
@@ -202,6 +233,7 @@ $("copy").addEventListener("click", async () => {
     await navigator.clipboard.writeText(text.value);
     announce("Texte copié dans le presse-papiers.");
   } catch {
+    document.querySelector(".retained-summary").open = true;
     text.focus(); text.select();
     announce("Copie automatique indisponible. Le texte est sélectionné : utilisez Ctrl+C ou Cmd+C.");
   }
@@ -209,9 +241,19 @@ $("copy").addEventListener("click", async () => {
 $("download").addEventListener("click", () => {
   const url = URL.createObjectURL(new Blob([text.value], {type: "text/plain;charset=utf-8"}));
   const link = document.createElement("a");
-  link.href = url; link.download = "texte-extrait.txt"; link.click();
+  link.href = url; link.download = "champs-retenus.txt"; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   announce("Le fichier texte a été préparé pour le téléchargement.");
+});
+$("download-json").addEventListener("click", () => {
+  const fields = Object.fromEntries(Object.entries(fieldNames).map(([key, label]) => {
+    const value = fieldInputs[key].value.trim();
+    return [key, {libelle: label, valeur: value, statut: value !== retainedFields[key].value ? "modifie_manuellement" : retainedFields[key].status}];
+  }));
+  const url = URL.createObjectURL(new Blob([JSON.stringify({moteur: retainedEngine, champs: fields}, null, 2)], {type: "application/json;charset=utf-8"}));
+  const link = document.createElement("a"); link.href = url; link.download = "champs-retenus.json"; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  announce("Export JSON des sept champs préparé.");
 });
 fetch("/health").then((response) => {
   if (!response.ok && !selected) announce("Le moteur OCR n’est pas prêt. Consultez le guide d’installation.", "error");

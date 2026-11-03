@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Extrayez le texte de vos images, directement sur votre ordinateur.">
-  <title>Extracteur — De l’image au texte</title>
+  <meta name="description" content="Repérez sept champs d’un document par libellés et règles, directement sur votre ordinateur.">
+  <title>Extracteur — Champs par libellés</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
@@ -12,7 +12,7 @@
 <body>
   <header class="topbar"><a href="/" class="brand" aria-label="Extracteur, accueil"><span class="brand-mark" aria-hidden="true">[t]</span> Extracteur</a><span class="local-note"><span aria-hidden="true" class="dot"></span> Sur votre ordinateur</span></header>
   <main>
-    <div class="intro"><h1>De l’image au texte.</h1><p>Une photo, une capture, un document. Récupérez le texte en quelques instants.</p></div>
+    <div class="intro"><h1>De l’image aux champs.</h1><p>Repérez les sept informations utiles par leurs libellés. Le reste est écarté.</p></div>
     <div class="workspace">
       <section class="source" aria-labelledby="source-title">
         <div class="section-heading"><h2 id="source-title">Votre image</h2><span>PNG ou JPEG · 10 Mio max.</span></div>
@@ -39,16 +39,17 @@
             </div>
             <div class="settings-grid"><label>Amélioration<select id="processing"><option value="original">Original — sans filtre</option><option value="contrast">Photo — contraste et bruit</option><option value="threshold">Noir et blanc adaptatif</option></select></label><label>Disposition du texte<select id="layout"><option value="auto">Automatique</option><option value="sparse">Texte dispersé / carte</option><option value="block">Bloc de texte</option><option value="line">Une seule ligne</option></select></label></div>
             <label class="check"><input type="checkbox" id="deskew"> Corriger la légère inclinaison (±12°)</label>
-            <details class="zones"><summary>Reconnaître plusieurs zones séparément</summary><p class="hint">Recadrez une zone (nom, date…), indiquez son libellé et extrayez. Pour les zones suivantes, cochez « Ajouter au résultat existant » avant d’extraire.</p><label for="zone-name">Libellé de la zone</label><input id="zone-name" type="text" maxlength="80" placeholder="Ex. Nom"><label class="check"><input type="checkbox" id="append-result"> Ajouter au résultat existant</label></details>
           </fieldset>
           <label for="language">Langue du document</label>
-          <div class="extract-controls"><select id="language" name="language"><option value="fra">Français</option><option value="eng">Anglais</option><option value="fra+eng">Français + Anglais</option></select><button id="extract" class="primary" type="submit" disabled>Extraire le texte <span aria-hidden="true">→</span></button></div>
+          <div class="extract-controls"><select id="language" name="language"><option value="fra">Français</option><option value="eng">Anglais</option><option value="fra+eng">Français + Anglais</option></select><button id="extract" class="primary" type="submit" disabled>Repérer les champs <span aria-hidden="true">→</span></button></div>
         </form>
       </section>
       <section class="result" aria-labelledby="result-title" aria-busy="false">
-        <div class="section-heading"><h2 id="result-title">Votre texte</h2><span id="count">Prêt à être extrait</span></div>
-        <div class="editor-wrap"><label class="sr-only" for="text">Texte extrait, modifiable</label><textarea id="text" placeholder="Le texte de votre image apparaîtra ici. Vous pourrez le corriger avant de le récupérer." spellcheck="true" disabled></textarea></div>
-        <div class="result-actions"><span class="edit-note">Relisez, corrigez, puis récupérez.</span><button id="copy" type="button" disabled>Copier</button><button id="download" type="button" disabled>Exporter .txt</button></div>
+        <div class="section-heading"><h2 id="result-title">Champs retenus</h2><span id="count">En attente d’une image</span></div>
+        <p class="hint" id="field-intro">Seuls le nom, les prénoms, la date et le lieu de naissance, le sexe, la taille et la profession sont conservés. Les autres informations sont écartées.</p>
+        <fieldset id="fields" hidden disabled><legend class="sr-only">Valeurs proposées, modifiables</legend><p class="hint">Repérage par libellés et positions, sans entraînement. Relisez chaque proposition. Un champ vide peut être renseigné manuellement.</p><div id="field-list"></div></fieldset>
+        <details class="retained-summary"><summary>Résumé des champs retenus</summary><div class="editor-wrap"><label class="sr-only" for="text">Résumé des sept champs, sans autres informations</label><textarea id="text" placeholder="Les champs renseignés apparaîtront ici." readonly disabled></textarea></div></details>
+        <div class="result-actions"><span class="edit-note">Corrigez les champs, puis récupérez le résultat.</span><button id="copy" type="button" disabled>Copier</button><button id="download" type="button" disabled>Exporter .txt</button><button id="download-json" type="button" disabled>Exporter .json</button></div>
       </section>
     </div>
     <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Choisissez une image pour commencer.</p>

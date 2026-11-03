@@ -89,3 +89,9 @@ Le projet est distribué sous MIT. `app/preprocess.py` ajoute OpenCV headless et
 Le navigateur présente un canvas orienté avec sélection de quatre coins, doublé de champs numériques accessibles. Les coins normalisés sont relatifs à l’image orientée. Le pipeline et ses plafonds de ressources sont décrits dans [ACCURACY.md](ACCURACY.md). L’accumulation de zones est locale dans le champ texte, sans base de données ni interprétation automatique des champs. Le benchmark génère ses propres images et ne conserve aucune donnée personnelle.
 
 Windows dispose de `scripts/setup.ps1` avec contrôle des données OCR par SHA-256 et détection du chemin standard Tesseract ; la validation native Windows reste à effectuer.
+
+## 9. Repérage ciblé sans entraînement
+
+`app/fields.py` constitue le moteur déterministe de libellés et règles. Il reçoit les boîtes OCR sur l’image préparée, regroupe les lignes, trouve les libellés, associe des candidats proches et valide les formats. Il ne retourne que les sept clés autorisées et leurs indices de repérage. Tesseract utilise `image_to_data` pour ce parcours ; le worker Paddle transmet les polygones de lignes, sans changer ses modèles.
+
+L’API utilise `structured=true` par défaut et renvoie le résumé filtré avec les champs. L’ancien texte libre reste disponible uniquement avec `structured=false` explicite pour compatibilité technique ; l’interface ne le demande pas. Le navigateur propose sept champs éditables et des exports filtrés TXT/JSON. Le traitement ne stocke aucun document ni historique. Les détails et limites sont définis dans [FIELDS.md](FIELDS.md).

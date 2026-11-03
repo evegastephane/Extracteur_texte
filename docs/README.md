@@ -12,6 +12,7 @@ Le produit lit une image et en extrait du texte grâce à un moteur OCR open sou
 | [SAD](SAD.md) | Architecture et choix techniques proposés |
 | [Précision OCR](ACCURACY.md) | Recadrage, perspective, filtres, zones et mesure des gains |
 | [PaddleOCR](PADDLEOCR.md) | Moteur optionnel, installation Windows/Linux et limites de validation |
+| [Champs par libellés](FIELDS.md) | Sept champs autorisés, règles spatiales, correction et exports filtrés |
 
 Périmètre : une petite application web utilisée sur une machine locale, pour une image à la fois. Le MVP est désormais implémenté ; voir le [guide d’installation](../README.md). Les documents ci-dessous conservent le cadrage initial. Les objectifs complets de performance et précision du SRS restent à mesurer.
 

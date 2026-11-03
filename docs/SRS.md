@@ -75,3 +75,9 @@ Ce document conserve le plan de validation initial. Des tests fonctionnels ont d
 | F-16 | Comparaison chiffrée avant/après | Script de benchmark CER avec six exemples synthétiques reproductibles |
 
 Le [guide de précision](ACCURACY.md) définit les réglages et le champ API `options`. La limite des images intermédiaires est de 8 millions de pixels et 8 000 pixels de côté. La rotation et les coins restent manuels ; aucune détection automatique de document ou interprétation des champs d’identité n’est promise. Le benchmark synthétique ne remplace pas l’évaluation sur des photos réelles autorisées.
+
+## 7. Extraction par libellés et règles
+
+Le nouveau parcours remplace le texte libre et l’ajout de zones par sept champs autorisés : nom, prénoms, date/lieu de naissance, sexe, taille et profession. Aucun autre champ n’est présenté ni exporté par l’interface. La recherche utilise les libellés français/anglais et les positions OCR, sans entraîner de modèle. Voir [FIELDS.md](FIELDS.md) pour les règles, statuts, limites et API.
+
+Exigences supplémentaires : repérer les valeurs à droite ou en dessous, arrêter l’association aux champs voisins ou aux grands écarts, signaler absence/conflit/format invalide, permettre la correction des sept valeurs et exporter seulement leur résumé TXT ou leur JSON. Une nouvelle image efface les résultats et un échec d’extraction conserve les corrections. Le texte intégral OCR reste uniquement transitoire pour le repérage. Les tests vérifient qu’un identifiant synthétique annexe n’apparaît ni dans les champs, ni dans les indices, ni dans les exports.
