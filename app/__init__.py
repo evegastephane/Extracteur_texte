@@ -11,7 +11,9 @@ def create_app(test_config=None):
     app = Flask(__name__)
     app.config.update(
         MAX_CONTENT_LENGTH=MAX_BYTES + 64 * 1024,
-        MAX_FORM_MEMORY_SIZE=16 * 1024,
+        # Werkzeug's multipart decoder buffers file chunks too. A 16 KiB
+        # limit rejected ordinary uploads before the 10 MiB file check.
+        MAX_FORM_MEMORY_SIZE=512 * 1024,
         MAX_FORM_PARTS=4,
         TRUSTED_HOSTS=["127.0.0.1", "localhost", "[::1]"],
     )

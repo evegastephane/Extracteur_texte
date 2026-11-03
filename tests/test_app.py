@@ -86,6 +86,22 @@ def test_invalid_images(client, data):
     assert post(client, data).status_code == 400
 
 
+def test_normal_photo_upload_over_parser_buffer(client, monkeypatch):
+    stream = io.BytesIO()
+    with Image.effect_noise((640, 480), 100).convert("RGB") as photo:
+        photo.save(stream, format="JPEG", quality=95)
+    data = stream.getvalue()
+    assert 100_000 < len(data) < MAX_BYTES
+    def recognize(received, language):
+        assert received == data
+        assert language == "fra"
+        return "Texte de la photo"
+    monkeypatch.setattr("app.extract", recognize)
+    response = post(client, data)
+    assert response.status_code == 200
+    assert response.json["text"] == "Texte de la photo"
+
+
 def test_limits_and_language(client):
     assert client.post("/api/ocr").status_code == 400
     assert post(client, image_bytes(), "../../eng").status_code == 400
