@@ -16,6 +16,7 @@ from PIL import Image, ImageOps
 from .fields import FIELDS, _typed_value, selected_text
 from .ocr import MAX_BYTES, MAX_PIXELS, OCRError
 from .paddle_engine import PaddleFailure, recognize_zones
+from .lighting import auto_lighten
 
 PROFILE_ID = "cni_puce_recto_v1"
 PROFILES = json.loads(Path(__file__).with_name("cni_templates.json").read_text(encoding="utf-8"))
@@ -68,7 +69,8 @@ def align_card(image):
     with image.resize((max(1, round(image.width * scale)), max(1, round(image.height * scale)))) as reduced:
         array = np.array(reduced)
     gray = cv2.cvtColor(array, cv2.COLOR_RGB2GRAY)
-    edges = cv2.Canny(cv2.GaussianBlur(gray, (5, 5), 0), 40, 120)
+    upper = int(np.clip(np.percentile(gray, 90) * .65, 20, 120))
+    edges = cv2.Canny(cv2.GaussianBlur(gray, (5, 5), 0), max(5, upper // 3), upper)
     edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
     hsv = cv2.cvtColor(array, cv2.COLOR_RGB2HSV)
     colored = cv2.inRange(hsv, np.array([0, 25, 25]), np.array([179, 255, 255]))
@@ -103,7 +105,9 @@ def align_card(image):
     destination = np.float32([[0, 0], [WIDTH - 1, 0], [WIDTH - 1, HEIGHT - 1], [0, HEIGHT - 1]])
     transform = cv2.getPerspectiveTransform(points.astype(np.float32), destination)
     aligned = cv2.warpPerspective(np.array(image), transform, (WIDTH, HEIGHT), flags=cv2.INTER_CUBIC, borderValue=(255, 255, 255))
-    return Image.fromarray(aligned), {"method": method, "orientation_confirmed": False, "size": [WIDTH, HEIGHT]}
+    with Image.fromarray(aligned) as card:
+        illuminated, lighting = auto_lighten(card)
+    return illuminated, {"method": method, "orientation_confirmed": False, "size": [WIDTH, HEIGHT], "lighting": lighting}
 
 
 def crop_zones(image):

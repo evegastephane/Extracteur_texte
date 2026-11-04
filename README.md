@@ -51,6 +51,8 @@ Ouvrir l’adresse locale affichée dans le terminal sur le port 8000. Le serveu
 2. **Verso :** ajouter l’autre face de la même carte, vérifier l’aperçu, puis **Suivant**. Un doublon strict des deux photos est refusé. Le verso est seulement recueilli pour relecture dans cette version.
 3. **Résultats :** relire et corriger les sept valeurs, puis copier ou exporter. Une lecture incertaine ou un format suspect est signalé. Revoir les photos sans les changer conserve les corrections et ne relance pas l’OCR.
 
+Les photos sombres sont **éclaircies automatiquement après le recadrage**, sans réglage supplémentaire. L’aperçu et les zones OCR utilisent la même image corrigée ; une photo déjà claire est conservée sans modification. Le fichier original n’est pas réécrit. Un manque extrême de lumière ou un reflet peut néanmoins imposer de reprendre la photo.
+
 Un changement de recto efface le verso précédent pour ne pas mélanger deux cartes. Toute modification effective des photos invalide les anciens résultats. « Nouvelle carte » efface la session. Aucun document ni résultat n’est sauvegardé sur le serveur ; seuls les modèles et dépendances sont persistants.
 
 ## Ce qui est spécialisé

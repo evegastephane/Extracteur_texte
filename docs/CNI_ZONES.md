@@ -76,3 +76,13 @@ Les références verso reçues ont permis d’ajouter les régions normalisées 
 | Numéro de carte | 0,775 | 0,875 | 0,970 | 0,945 |
 
 Aucune des valeurs personnelles visibles dans les photos de référence n’est enregistrée dans le gabarit ou les tests. Le test de non-rétention vérifie qu’un marqueur synthétique placé sur le verso ne ressort pas dans la réponse.
+
+## Éclaircissement automatique des photos
+
+Après le recadrage, l’application mesure la luminosité dans la zone des valeurs de la carte, afin de ne pas être guidée par le bureau sombre ou le portrait. Si cette zone est globalement sombre, une correction gamma bornée est appliquée à la luminance. En présence de zones claires et de grandes ombres, un gain local lissé et limité relève les ombres sans amplifier les blancs. Les couleurs restent traitées via la luminance Lab, sans binarisation ou génération de détails.
+
+Une photo déjà suffisamment claire est renvoyée sans modification de ses pixels. Les seuils de contours sont également adaptés à la luminosité pendant la recherche de carte. Le fichier importé n’est jamais réécrit. L’aperçu PNG corrigé est conservé dans la session et transmis tel quel pour les découpes OCR ; aucune seconde correction n’est ajoutée à la lecture, ce qui évite de cumuler les éclaircissements.
+
+Aucun curseur, filtre ou réglage utilisateur n’est ajouté. `alignment.lighting.applied` indique si l’éclaircissement a eu lieu ; une courte confirmation apparaît dans l’interface. Une photo presque noire reste signalée comme insuffisante : ce traitement ne peut pas récupérer des caractères absents, flous ou masqués par un reflet.
+
+Les tests couvrent photo claire inchangée, exposition sombre, ombre locale, noirs/blancs préservés, avertissement sur image noire et cohérence entre aperçu et découpes. Une lecture Tesseract sur des champs synthétiques corrigés confirme la conservation des caractères ; aucun gain chiffré de PaddleOCR sur de vraies CNI n’est revendiqué par ces tests. Le test navigateur importe une photo sombre et vérifie la correction automatique sans nouveau contrôle.

@@ -86,7 +86,10 @@ async function upload(file) {
     // A changed front invalidates the old back; never combine different cards.
     if (key === "recto") discardPhoto("verso");
     clearResult(); renderStep(false);
-    announce(data.alignment.method === "image_cadree" ? "Vérifiez que la carte occupe tout le cadre et que le texte est à l’endroit, puis appuyez sur Suivant." : "Carte recadrée. Vérifiez que les quatre bords sont présents et que le texte est à l’endroit, puis appuyez sur Suivant.");
+    const lighting = data.alignment.lighting;
+    const notice = lighting?.warning || (lighting?.applied ? "Photo éclaircie automatiquement. " : "");
+    const instruction = data.alignment.method === "image_cadree" ? "Vérifiez que la carte occupe tout le cadre et que le texte est à l’endroit, puis appuyez sur Suivant." : "Carte recadrée. Vérifiez que les quatre bords sont présents et que le texte est à l’endroit, puis appuyez sur Suivant.";
+    announce(notice + (notice && !notice.endsWith(" ") ? " " : "") + instruction);
   } catch (error) {
     announce(errorMessage(error) + (photos[key] ? " La photo précédente est conservée." : ""), true);
   } finally { setBusy(false); }

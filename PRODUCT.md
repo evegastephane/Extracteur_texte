@@ -28,10 +28,14 @@ Le navigateur communique avec le serveur local lié à `127.0.0.1`. Aucun docume
 
 ## Vérification actuelle
 
-114 tests réussis, 2 tests d’inférence réelle Paddle ignorés faute de poids préparés. L’alignement synthétique et certains contrôles de découpe sont réels ; ces derniers utilisent explicitement Tesseract comme substitution, sans valider Paddle. Chromium vérifie l’alignement et l’erreur de moteur absent, puis une réponse Paddle simulée pour le parcours, les corrections, exports, remise à zéro et mobile. Le défaut de perte des corrections après simple relecture a été corrigé en réutilisant le résultat ; le test navigateur final passe.
+120 tests réussis, 2 tests d’inférence réelle Paddle ignorés faute de poids préparés. L’alignement synthétique et certains contrôles de découpe sont réels ; ces derniers utilisent explicitement Tesseract comme substitution, sans valider Paddle. Chromium vérifie l’alignement et l’erreur de moteur absent, puis une réponse Paddle simulée pour le parcours, les corrections, exports, remise à zéro et mobile. Le défaut de perte des corrections après simple relecture a été corrigé en réutilisant le résultat ; le test navigateur final passe.
 
 Captures revues : `.test-artifacts/desktop-wizard-recto.png`, `desktop-wizard-results.png`, `mobile-wizard-recto.png`, `mobile-wizard-results.png` dans le même dossier. Elles ne prouvent pas une reconnaissance Paddle réelle. La précision sur les CNI fournies et la validation native Windows ne sont pas établies.
 
 Références : [zones et limites](docs/CNI_ZONES.md), [installation](README.md), [système visuel](DESIGN.md).
 
-Diagnostic Paddle : import natif séparé, initialisation anticipée PaddleX désactivée dans le worker, mode sans modèles `--diagnose-import` et traces de pile toutes les 20 secondes pendant la préparation seulement. Cet import a été exécuté avec succès sous Linux ; le blocage Windows reste à confirmer sur la machine concernée.
+Diagnostic Paddle : import natif séparé, initialisation anticipée PaddleX désactivée dans le worker, mode sans modèles `--diagnose-import` et traces de pile toutes les 20 secondes pendant la préparation seulement. Cet import a été exécuté avec succès sous Linux ; le blocage d’import initial a ensuite été résolu sur la machine Windows d’après le journal utilisateur.
+
+Éclairage automatique : après alignement, la préparation de l’image corrige une exposition sombre ou des ombres importantes sur la luminance de la carte. Pas de réglage supplémentaire. L’aperçu et l’OCR utilisent les mêmes pixels corrigés, sans cumul de traitements ; une image bien exposée reste inchangée. Les cas presque noirs sont signalés, sans inventer de détails. Six tests dédiés et le parcours navigateur contrôlent ce comportement.
+
+L’utilisateur a depuis confirmé la réussite de la préparation Paddle sur Windows (import, chargement et sept zones synthétiques). Cela ne constitue pas une mesure de précision sur les vraies cartes ni une validation native du nouvel éclaircissement.

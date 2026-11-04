@@ -4,7 +4,7 @@ zone output is explicitly simulated because local model weights are unavailable.
 import json
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 from playwright.sync_api import expect, sync_playwright
 
 root = Path(__file__).resolve().parent.parent
@@ -22,6 +22,8 @@ with Image.new('RGB', (1600, 1000), '#f7f8ef') as image:
     for key, (left, top, right, bottom) in profile['zones'].items():
         draw.text((round(left * 1600) + 8, round(top * 1000) + 1), values[key], font=font, fill='black')
     image.save(out / 'cni-front.png')
+    with ImageEnhance.Brightness(image).enhance(.25) as dark:
+        dark.save(out / 'cni-front-dark.png')
 with Image.new('RGB', (1600, 1000), '#e5e9dc') as image:
     ImageDraw.Draw(image).text((200, 450), 'VERSO SYNTHETIQUE', font=font, fill='black')
     image.save(out / 'cni-back.png')
@@ -38,8 +40,9 @@ with sync_playwright() as p:
     assert page.locator('select').count() == 0
     assert page.locator('#next').is_disabled()
     page.screenshot(path=str(out/'desktop-wizard-recto.png'), full_page=True)
-    page.locator('#image').set_input_files(str(out/'cni-front.png'))
+    page.locator('#image').set_input_files(str(out/'cni-front-dark.png'))
     expect(page.locator('#next')).to_be_enabled(timeout=15000)
+    expect(page.locator('#status')).to_contain_text('Photo éclaircie automatiquement')
     page.locator('#flip-photo').click()
     expect(page.locator('#next')).to_be_enabled()
     page.locator('#flip-photo').click()
