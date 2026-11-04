@@ -84,8 +84,11 @@ Exigences supplémentaires : repérer les valeurs à droite ou en dessous, arrê
 
 ## 8. Parcours CNI spécialisé par zones
 
-Le parcours principal est désormais recto → verso → résultats, sans sélecteur de moteur, réglages OCR ou coordonnées. PaddleOCR lit sept zones de valeurs prédéfinies sur un recto aligné à 1600 × 1000. Les propositions restent modifiables et exportables. La classification ancien/nouveau est différée ; un seul profil provisoire est défini. Le verso est obligatoire pour relecture mais aucune de ses zones n’est lue, faute de référence. Voir [CNI_ZONES.md](CNI_ZONES.md).
+Le parcours principal est désormais recto → verso → résultats, sans sélecteur de moteur, réglages OCR ou coordonnées. PaddleOCR lit sept zones de valeurs prédéfinies sur un recto aligné à 1600 × 1000. Les propositions restent modifiables et exportables. La classification ancien/nouveau est différée ; un seul profil provisoire est défini. Le verso est obligatoire pour relecture. Ses régions sont maintenant référencées pour calibration, mais ne sont pas lues car elles sont hors des sept champs autorisés. Voir [CNI_ZONES.md](CNI_ZONES.md).
 
 Vérifications requises : contours et projection, orientation confirmée, images distinctes et canoniques, découpage excluant portrait/signature, une instance de reconnaissance directe pour les sept zones, validation sans invention, limite globale de 90 secondes et nettoyage. La limite HTTP totale accepte deux images de 10 Mio ; les limites de chaque fichier sont contrôlées séparément. Une simple relecture sans changement doit conserver les corrections sans OCR supplémentaire. Changer le recto invalide le verso et les anciens résultats.
 
 `/health` porte maintenant sur PaddleOCR par zones, et non sur Tesseract : HTTP 503 sans préparation réussie du moteur direct. Le test réel de préparation ajoute le marqueur `zone_smoke_test` après réussite. Les tests synthétiques et les réponses UI simulées ne prouvent pas la précision sur les photos de CNI fournies.
+
+
+La préparation CNI ne dépend plus du test de l’ancien pipeline généraliste : celui-ci est optionnel avec `--check-legacy`. Les marqueurs et contrôles de disponibilité sont indépendants. Les erreurs de téléchargement et de test local sont distinguées, avec étapes du worker affichées sans tampon pendant la préparation synthétique.

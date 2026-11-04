@@ -3,7 +3,7 @@
     "name": "CNI à puce — recto illustré",
     "status": "provisional",
     "reference_size": [1600, 1000],
-    "note": "Zones estimées sur le recto fourni, sans conserver sa photo ni ses données. Classification ancien/nouveau différée. Aucun gabarit verso ou second modèle défini.",
+    "note": "Zones estimées sur les références recto et verso fournies, sans conserver leurs photos ni leurs données. Classification ancien/nouveau différée ; aucun second modèle identifié.",
     "zones": {
       "nom": [0.265, 0.210, 0.635, 0.275],
       "prenoms": [0.265, 0.335, 0.640, 0.402],
@@ -12,6 +12,22 @@
       "sexe": [0.265, 0.615, 0.340, 0.662],
       "taille": [0.385, 0.615, 0.530, 0.662],
       "profession": [0.265, 0.700, 0.640, 0.755]
+    },
+    "back": {
+      "status": "provisional",
+      "ocr_enabled": false,
+      "note": "Zones référencées pour calibration uniquement. Ces informations ne font pas partie des sept champs autorisés ; aucune valeur du verso n’est lue ou exportée.",
+      "regions": {
+        "pere": [0.040, 0.080, 0.680, 0.145],
+        "mere": [0.040, 0.205, 0.680, 0.265],
+        "code_administratif": [0.040, 0.345, 0.250, 0.405],
+        "adresse": [0.040, 0.440, 0.285, 0.505],
+        "date_delivrance": [0.540, 0.355, 0.720, 0.415],
+        "date_expiration": [0.540, 0.465, 0.720, 0.525],
+        "poste_identification": [0.735, 0.355, 0.970, 0.415],
+        "identifiant_unique": [0.735, 0.465, 0.980, 0.535],
+        "numero_carte": [0.775, 0.875, 0.970, 0.945]
+      }
     }
   }
 }

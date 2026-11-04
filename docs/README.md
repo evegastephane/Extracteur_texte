@@ -2,7 +2,7 @@
 
 État courant : parcours CNI recto → verso → résultats, lecture par zones fixes du recto avec PaddleOCR. Les documents BRS/PRD/SRS/SAD conservent le cadrage initial et ses évolutions.
 
-Le moteur principal est PaddleOCR local, sans service d’IA externe. Le gabarit du recto fourni est provisoire ; classification ancien/nouveau et zones du verso sont différées.
+Le moteur principal est PaddleOCR local, sans service d’IA externe. Le gabarit du recto fourni est provisoire ; classification ancien/nouveau différée ; régions du verso référencées mais hors des sept champs retenus.
 
 | Document | Rôle |
 | --- | --- |

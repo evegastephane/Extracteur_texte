@@ -1,4 +1,4 @@
-# Optional, isolated worker environment. Never install in the main .venv.
+# Isolated Paddle worker environment. Never install in the main .venv.
 paddleocr==3.3.3
 paddlepaddle==3.2.2
 paddlex[ocr-core]==3.3.13

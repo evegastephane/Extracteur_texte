@@ -25,7 +25,7 @@
       </label>
       <p id="file-help" class="hint">PNG ou JPEG · 10 Mio maximum par photo. Posez la carte sur un fond uni.</p>
       <div id="photo-tools" hidden><button id="change-photo" type="button">Changer la photo</button><button id="flip-photo" type="button">Retourner l’image</button><span class="hint">Le texte doit être à l’endroit.</span></div>
-      <p id="back-notice" class="hint" hidden>Le verso sera disponible pour votre relecture. Les sept champs sont lus sur le recto ; aucune zone du verso n’est encore configurée.</p>
+      <p id="back-notice" class="hint" hidden>Le verso sera disponible pour votre relecture. Seuls les sept champs du recto sont retenus ; les autres informations du verso ne sont pas exportées.</p>
       <div class="navigation"><button id="back" type="button" hidden>Retour</button><button id="return-results" type="button" hidden>Revenir aux résultats</button><button id="next" class="primary" type="button" disabled>Suivant <span aria-hidden="true">→</span></button></div>
     </section>
     <section id="loading-step" class="panel loading" aria-labelledby="loading-title" hidden aria-busy="true"><div class="spinner" aria-hidden="true"></div><h2 id="loading-title" tabindex="-1">Lecture des zones en cours</h2><p>Les sept champs du recto sont lus avec PaddleOCR. Gardez cette page ouverte.</p></section>
@@ -39,7 +39,7 @@
       <div class="navigation"><button id="review-photos" type="button">Modifier les photos</button><button id="restart" type="button" class="primary">Nouvelle carte</button></div>
     </section>
     <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Commencez par la photo du recto.</p>
-    <details class="scope"><summary>Cartes prises en charge</summary><p>Cette version applique des zones fixes au recto de la carte à puce illustrée. La classification ancien/nouveau modèle est différée. Le verso est recueilli pour relecture, mais ses zones ne sont pas encore définies. Une lecture erronée reste possible : vérifiez les valeurs proposées.</p></details>
+    <details class="scope"><summary>Cartes prises en charge</summary><p>Cette version applique un gabarit provisoire à la carte à puce illustrée. La classification ancien/nouveau modèle est différée. Les zones du verso sont référencées, mais seules les sept valeurs du recto sont lues et exportées. Une lecture erronée reste possible : vérifiez les valeurs proposées.</p></details>
     <footer>Vos photos restent dans votre session. Aucun document envoyé à un service externe.</footer>
   </main>
 </body>

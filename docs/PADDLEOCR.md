@@ -14,7 +14,7 @@ py -3.12 -m venv .venv-paddle
 .\.venv\Scripts\python.exe -m app
 ```
 
-Après la réussite des tests synthétiques affichés par le script, actualiser le navigateur (Ctrl+F5) puis ajouter le recto et le verso. L’application principale continue d’utiliser `.venv` ; `.venv-paddle` sert seulement au sous-processus OCR. Ne pas installer ces dépendances dans `.venv`, afin d’éviter les conflits OpenCV/PaddleX. Relancer ce script après mise à jour, même si les modèles sont déjà présents : le nouveau test de reconnaissance directe doit activer `zone_smoke_test`.
+Après la réussite du test direct des zones affiché par le script, actualiser le navigateur (Ctrl+F5) puis ajouter le recto et le verso. L’application principale continue d’utiliser `.venv` ; `.venv-paddle` sert seulement au sous-processus OCR. Ne pas installer ces dépendances dans `.venv`, afin d’éviter les conflits OpenCV/PaddleX. Relancer ce script après mise à jour, même si les modèles sont déjà présents : le nouveau test de reconnaissance directe doit activer `zone_smoke_test`.
 
 La validation native Windows reste à effectuer. Si une dépendance native ne charge pas, vérifier Python x64 et le runtime Microsoft Visual C++ requis par PaddlePaddle ; consulter son [guide officiel](https://www.paddlepaddle.org.cn/documentation/docs/en/install/index_en.html). Aucune clé API n’est nécessaire. Le moteur Tesseract reste disponible si PaddleOCR n’est pas préparé.
 
@@ -33,7 +33,7 @@ PaddleOCR 3.3.3, PaddlePaddle CPU 3.2.2 et PaddleX 3.3.13 sont épinglés. L’e
 
 Les modèles officiels préparés sont `PP-OCRv5_mobile_det` et `latin_PP-OCRv5_mobile_rec`. Le chemin CNI ne charge que le second dans `TextRecognition` : les zones remplacent la détection de texte sur toute la carte. Le premier reste utilisé par l’ancienne API et son test de compatibilité. Le cadrage est automatique, avec simple confirmation du sens sur l’aperçu ; aucun choix de langue, filtre ou PSM n’est affiché.
 
-Le script télécharge uniquement deux archives depuis `paddle-model-ecology.bj.bcebos.com`, par HTTPS avec vérification TLS. Il refuse les archives excessives, les liens et les chemins dangereux. Les modèles sont préparés dans un répertoire temporaire et activés seulement après des tests réels sur une image synthétique `LOCAL OCR 123`, puis sur sept découpes de cette ligne. Leur manifeste local conserve les URL, les SHA-256 des archives et ceux des fichiers. Ces empreintes sont calculées après téléchargement depuis la source officielle TLS, pas comparées à une signature indépendante de l’éditeur. L’application vérifie ensuite l’intégrité des fichiers avant usage.
+Le script télécharge uniquement deux archives depuis `paddle-model-ecology.bj.bcebos.com`, par HTTPS avec vérification TLS. Il refuse les archives excessives, les liens et les chemins dangereux. Les modèles sont préparés dans un répertoire temporaire et la lecture CNI est activée seulement après un test réel sur sept découpes synthétiques `LOCAL OCR 123`. L’ancien pipeline généraliste est testé uniquement avec `--check-legacy`. Leur manifeste local conserve les URL, les SHA-256 des archives et ceux des fichiers. Ces empreintes sont calculées après téléchargement depuis la source officielle TLS, pas comparées à une signature indépendante de l’éditeur. L’application vérifie ensuite l’intégrité des fichiers avant usage.
 
 Les modèles restent dans `.ocr-data/paddle/`, ignoré par Git. Le script peut être relancé pour retester les modèles existants ; il refuse de remplacer des modèles dont le manifeste est absent ou incohérent. Préserver ou renommer ce dossier avant une réinstallation si nécessaire.
 
@@ -67,3 +67,13 @@ Les bibliothèques PaddleOCR et PaddlePaddle s’importent réellement sous Linu
 L’ajout de `paddle-model-ecology.bj.bcebos.com` est sauvegardé dans le brouillon réseau de l’environnement. Pour lever ce blocage cloud, examiner et enregistrer les paramètres, puis publier l’environnement et relancer la préparation. Cette restriction cloud n’établit pas que le téléchargement sera bloqué sur votre ordinateur Windows.
 
 PaddleOCR, PaddlePaddle et PaddleX utilisent des licences Apache-2.0 ; leurs dépendances conservent leurs propres licences.
+
+## Diagnostic d’un blocage pendant la préparation
+
+La ligne `Connectivity check to the model hoster has been skipped` est informative : les modèles locaux sont utilisés et la sonde réseau automatique est désactivée. Elle n’annonce pas une panne Internet et ne désactive pas la vérification TLS.
+
+La préparation indique maintenant les versions installées, puis chaque étape du worker : import de `TextRecognition`, chargement du modèle latin, lecture de chaque zone. Les lignes sont affichées immédiatement, sans tampon. Un dépassement de 90 secondes est identifié comme un **test local** et non comme un échec de téléchargement. Copier la dernière ligne `[Paddle]` et l’erreur suivante pour identifier l’étape bloquée. La limite reste identique au moteur de production ; elle n’est pas augmentée pour masquer un blocage.
+
+Par défaut, aucune initialisation de l’ancien détecteur généraliste n’est requise. Pour tester volontairement l’ancienne API : `python scripts/setup_paddle.py --check-legacy`, avec le Python de `.venv-paddle`. L’activation CNI et celle de l’ancien pipeline sont séparées ; un test CNI réussi ne déclare pas l’ancien détecteur validé.
+
+Après un test interrompu, les empreintes des fichiers peuvent rester valides même si le marqueur d’essai est `pending`. Relancer le script reteste ces mêmes fichiers, sans imposer leur suppression ou un nouveau téléchargement. Les marqueurs de disponibilité restent désactivés tant que les tests demandés ne réussissent pas.

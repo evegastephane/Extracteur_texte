@@ -109,7 +109,7 @@ def create_app(test_config=None):
     def cni_state():
         return {"engine": "paddleocr", "ready": zone_status()["ready"],
                 "profile": PROFILE_ID, "profile_status": PROFILE["status"],
-                "classification": "deferred", "verso_zones": False}
+                "classification": "deferred", "verso_zones": bool(PROFILE.get("back", {}).get("regions")), "verso_ocr": False}
 
     @app.get("/api/cni/status")
     def cni_status():

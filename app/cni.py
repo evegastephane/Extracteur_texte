@@ -160,6 +160,7 @@ def read_cni(front_data, back_data):
     fields = validate_zone_values(values)
     return {"engine": "paddleocr", "profile": PROFILE_ID, "profile_status": PROFILE["status"],
             "fields": fields, "text": selected_text(fields),
+            "verso": {"zones_referenced": True, "ocr": False},
             "notices": ["Gabarit provisoire du recto illustré : vérifiez chaque champ.",
                         "Classification ancien/nouveau différée.",
-                        "Verso reçu, sans lecture automatique : ses zones ne sont pas encore définies."]}
+                        "Verso reçu et zones référencées ; aucune de ses informations n’appartient aux sept champs retenus, donc elles ne sont pas lues ni exportées."]}

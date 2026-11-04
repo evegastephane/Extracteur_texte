@@ -2,7 +2,7 @@
 
 ## Périmètre de cette itération
 
-Le parcours demandé est recto → verso → résultats, avec PaddleOCR principal et sans paramètres techniques. L’identification automatique ancien/nouveau modèle est **différée**. Les deux exemples fournis montrent le même type de recto, dont l’un est tourné ; ils ne définissent pas le verso ni un second modèle.
+Le parcours demandé est recto → verso → résultats, avec PaddleOCR principal et sans paramètres techniques. L’identification automatique ancien/nouveau modèle est **différée**. Les dernières images fournissent désormais des références recto et verso du même type de carte, sous plusieurs orientations. Les zones du verso ont été estimées à partir de ces vues ; elles ne définissent pas un second modèle.
 
 Le seul profil est `cni_puce_recto_v1`, descriptif et provisoire. Il ne porte pas de date ou de classement ancien/nouveau non vérifié. Les coordonnées ont été estimées sur le recto illustré, sans conserver ses pixels ni ses valeurs personnelles dans les fichiers du projet. La calibration sur un jeu de vraies cartes autorisées reste nécessaire.
 
@@ -35,11 +35,11 @@ Les zones restent à gauche du portrait et au-dessus de la signature. Le test sy
 
 ## Verso et autres modèles
 
-Le verso est obligatoire dans le parcours pour préparer le dossier et permettre sa relecture. Il est décodé et doit être aligné, mais aucun de ses champs n’est lu faute de référence permettant de définir ses zones. Le serveur retourne explicitement cette limite. Il n’extrait pas de numéro de carte, de signature ou d’autres informations hors des sept champs.
+Le verso est obligatoire dans le parcours pour préparer le dossier et permettre sa relecture. Il est décodé et doit être aligné. Ses régions sont maintenant référencées dans `back.regions` du gabarit, mais aucun de ses champs n’est lu : ils sont hors de la liste des sept informations autorisées. Le serveur retourne explicitement cette limite. Il n’extrait pas de numéro de carte, de signature ou d’autres informations hors des sept champs.
 
 Deux photos strictement identiques sont refusées comme recto/verso. Deux images différentes de deux rectos ne peuvent pas être identifiées comme telles par cette version : il n’y a ni classificateur de face/modèle ni vérification d’authenticité. Le recadrage géométrique n’est pas un contrôle d’identité.
 
-Pour étendre la couverture, il faudra des références réelles du verso et du second modèle, avec leur orientation et leurs champs attendus. Ajouter alors un profil distinct et des tests de calibration ; ne pas réutiliser silencieusement ces zones pour un autre dessin de carte.
+Pour étendre la couverture, il faudra des références du second modèle avec les champs attendus, et décider explicitement si d’autres champs du verso doivent être retenus. Ajouter alors un profil distinct et des tests de calibration ; ne pas réutiliser silencieusement ces zones pour un autre dessin de carte.
 
 ## Statuts et corrections
 
@@ -53,8 +53,26 @@ Les résultats édités sont conservés pendant une simple relecture des photos,
 
 ## Installation et état de validation
 
-La préparation Paddle doit maintenant réussir deux essais synthétiques : le pipeline historique et la reconnaissance directe de zones. Relancer `scripts/setup_paddle.py` avec le Python de `.venv-paddle`, même si les modèles sont déjà présents. Un manifeste cohérent est vérifié avant réutilisation ; le marqueur `zone_smoke_test: passed` n’est écrit qu’après réussite du test direct. Sans ce marqueur, le parcours CNI refuse la lecture avec HTTP 503 et propose de préparer le moteur.
+La préparation Paddle teste par défaut uniquement la reconnaissance directe des zones CNI. L’ancien pipeline généraliste n’est testé que si `--check-legacy` est explicitement demandé ; il ne bloque plus la préparation CNI par défaut. Relancer `scripts/setup_paddle.py` avec le Python de `.venv-paddle`, même si les modèles sont déjà présents. Un manifeste cohérent est vérifié avant réutilisation ; le marqueur `zone_smoke_test: passed` n’est écrit qu’après réussite du test direct. Sans ce marqueur, le parcours CNI refuse la lecture avec HTTP 503 et propose de préparer le moteur.
 
 Les tests automatisés vérifient géométrie, zones, formats, worker unique, limites et nettoyages. Certains tests de découpe utilisent réellement Tesseract comme substitution de contrôle ; ils ne démontrent pas l’inférence Paddle. Le navigateur utilise réellement l’alignement et l’erreur de moteur absent, puis simule une réponse Paddle pour exercer les résultats et exports. Les captures de résultats de test ne sont pas des preuves de reconnaissance Paddle réelle.
 
 Les deux tests Paddle réels restent ignorés dans le cloud faute de modèles préparés. La validation native Windows et la précision sur les CNI photographiées fournies ne sont pas établies. Pour cette version, le travail vérifié est le pipeline et le parcours ; aucun taux de précision sur de vraies cartes n’est revendiqué.
+
+## Régions du verso référencées, sans lecture
+
+Les références verso reçues ont permis d’ajouter les régions normalisées suivantes. Elles sont provisoires et doivent être calibrées sur des images réellement alignées. Elles ne sont pas envoyées au worker et ne créent aucune clé supplémentaire dans les résultats.
+
+| Région | Gauche | Haut | Droite | Bas |
+| --- | ---: | ---: | ---: | ---: |
+| Père | 0,040 | 0,080 | 0,680 | 0,145 |
+| Mère | 0,040 | 0,205 | 0,680 | 0,265 |
+| Code administratif | 0,040 | 0,345 | 0,250 | 0,405 |
+| Adresse | 0,040 | 0,440 | 0,285 | 0,505 |
+| Date de délivrance | 0,540 | 0,355 | 0,720 | 0,415 |
+| Date d’expiration | 0,540 | 0,465 | 0,720 | 0,525 |
+| Poste d’identification | 0,735 | 0,355 | 0,970 | 0,415 |
+| Identifiant unique | 0,735 | 0,465 | 0,980 | 0,535 |
+| Numéro de carte | 0,775 | 0,875 | 0,970 | 0,945 |
+
+Aucune des valeurs personnelles visibles dans les photos de référence n’est enregistrée dans le gabarit ou les tests. Le test de non-rétention vérifie qu’un marqueur synthétique placé sur le verso ne ressort pas dans la réponse.

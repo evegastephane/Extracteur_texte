@@ -148,3 +148,50 @@ def test_setup_activates_only_after_smoke(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="synthetic"):
         setup_paddle.main()
     assert json.loads((destination / "manifest.json").read_text())["zone_smoke_test"] == "pending"
+    assert engine.models_valid(destination)  # Valid weights can be retested without redownloading.
+
+
+def test_zone_readiness_does_not_require_legacy_test(tmp_path, monkeypatch):
+    manifest = create_manifest(tmp_path)
+    manifest.update(smoke_test="not_run", zone_smoke_test="passed")
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest))
+    monkeypatch.setattr(engine, "MODEL_ROOT", tmp_path)
+    monkeypatch.setattr(engine, "worker_python", lambda: Path(sys.executable))
+    assert engine.models_valid()
+    assert engine.zone_status()["ready"]
+    assert not engine.status()["ready"]
+    manifest["zone_smoke_test"] = "pending"
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest))
+    assert not engine.zone_status()["ready"]
+
+
+def test_setup_timeout_is_local_not_download_error(monkeypatch, capsys):
+    def timeout(command, **kwargs):
+        assert kwargs["timeout"] == 90
+        assert kwargs["env"]["EXTRACTEUR_PADDLE_DIAGNOSTICS"] == "1"
+        assert kwargs["env"]["PYTHONUNBUFFERED"] == "1"
+        raise subprocess.TimeoutExpired(command, 90)
+    monkeypatch.setattr(setup_paddle.subprocess, "run", timeout)
+    with pytest.raises(setup_paddle.SetupFailure, match="LOCAL") as error:
+        setup_paddle.run_smoke_worker(["synthetic-worker"], "chargement CNI")
+    assert "ne prouve pas un problème Internet" in str(error.value)
+    assert "chargement CNI" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("check_legacy", [False, True])
+def test_setup_defaults_to_zone_worker_only(monkeypatch, tmp_path, check_legacy):
+    calls = []
+    def worker(command, stage):
+        calls.append(command)
+        # command: python, -u, script, image, output, models, jobs
+        if len(command) == 7:
+            jobs = json.loads(Path(command[6]).read_text())
+            payload = {"zones": {job["field"]: {"text": "LOCAL OCR 123", "score": .99} for job in jobs}}
+        else:
+            payload = {"text": "LOCAL OCR 123"}
+        Path(command[4]).write_text(json.dumps(payload), encoding="utf-8")
+    monkeypatch.setattr(setup_paddle, "run_smoke_worker", worker)
+    setup_paddle.smoke_test(tmp_path, check_legacy=check_legacy)
+    assert len(calls) == (2 if check_legacy else 1)
+    assert calls[0][1] == "-u"
+    assert len(calls[0]) == 7

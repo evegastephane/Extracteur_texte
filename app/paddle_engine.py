@@ -24,10 +24,11 @@ def worker_python():
         ROOT / ".venv-paddle" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")))
 
 
-def models_valid(root=MODEL_ROOT):
+def models_valid(root=None):
+    root = MODEL_ROOT if root is None else Path(root)
     try:
         manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
-        if manifest.get("models") != MODEL_NAMES or manifest.get("smoke_test") != "passed" or not manifest.get("files"):
+        if manifest.get("models") != MODEL_NAMES or not manifest.get("files"):
             return False
         # Reject unknown/escaping names even if the local manifest was edited.
         required = {f"{kind}/{name}" for kind in MODEL_NAMES for name in ("inference.json", "inference.pdiparams", "inference.yml")}
@@ -47,12 +48,16 @@ def models_valid(root=MODEL_ROOT):
 def status():
     installed = worker_python().is_file()
     ready = installed and models_valid()
+    try:
+        ready = ready and json.loads((MODEL_ROOT / "manifest.json").read_text(encoding="utf-8")).get("smoke_test") == "passed"
+    except (OSError, ValueError, AttributeError):
+        ready = False
     return {"ready": ready, "timeout_seconds": TIMEOUT,
             "message": "Modèles locaux prêts." if ready else "Installation optionnelle requise : consultez le guide PaddleOCR."}
 
 
 def zone_status():
-    ready = status()["ready"]
+    ready = worker_python().is_file() and models_valid()
     try:
         manifest = json.loads((MODEL_ROOT / "manifest.json").read_text(encoding="utf-8"))
         ready = ready and manifest.get("zone_smoke_test") == "passed"

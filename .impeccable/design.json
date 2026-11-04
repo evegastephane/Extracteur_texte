@@ -64,7 +64,7 @@
       "alignment": "Automatic quadrilateral projection to 1600 × 1000; user checks orientation and may flip 180 degrees.",
       "settings": "No engine, filter, language or corner controls.",
       "reuse": "Unchanged-photo review reopens edited results without OCR; changes invalidate results, and changing recto clears previous verso.",
-      "verso": "Required, decoded, aligned and displayable; no automatic reading or verso template."
+      "verso": "Required, decoded, aligned and displayable; verso zones referenced for calibration only, never OCR-read or exported as additional fields."
     },
     "fieldOutput": {
       "keys": [

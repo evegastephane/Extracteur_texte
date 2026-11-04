@@ -55,6 +55,25 @@ def test_template_has_seven_value_only_regions():
         assert bottom - top < .08
 
 
+def test_back_regions_reference_only_no_extra_output(monkeypatch):
+    back_profile = cni.PROFILE["back"]
+    assert back_profile["status"] == "provisional"
+    assert back_profile["ocr_enabled"] is False
+    assert {"pere", "mere", "adresse", "date_delivrance", "date_expiration", "numero_carte"}.issubset(back_profile["regions"])
+    for left, top, right, bottom in back_profile["regions"].values():
+        assert 0 <= left < right <= 1 and 0 <= top < bottom <= 1
+    def recognize_only_front(crops):
+        assert set(crops) == set(VALUES)
+        return {key: {"text": value, "score": .99} for key, value in VALUES.items()}
+    monkeypatch.setattr(cni, "recognize_zones", recognize_only_front)
+    with synthetic_front() as front, synthetic_back() as back:
+        ImageDraw.Draw(back).text((100, 200), "PRIVATE_BACK_MARKER", fill="black")
+        result = cni.read_cni(png(front), png(back))
+    assert set(result["fields"]) == set(VALUES)
+    assert "PRIVATE_BACK_MARKER" not in json.dumps(result)
+    assert result["verso"] == {"zones_referenced": True, "ocr": False}
+
+
 def test_align_perspective_and_crop_values():
     with synthetic_front() as front:
         quad = np.float32([[170, 240], [1850, 120], [1730, 1240], [220, 1320]])

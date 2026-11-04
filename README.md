@@ -4,7 +4,7 @@ Une application locale avec un parcours simple : **recto → verso → résultat
 
 Les seules informations retenues sont : nom, prénoms, date et lieu de naissance, sexe, taille et profession. Les propositions restent modifiables et exportables en TXT/JSON.
 
-**Périmètre actuel :** un gabarit provisoire du recto à puce illustré par l’utilisateur. La classification ancien/nouveau est différée. Aucun gabarit du second modèle ni du verso n’a été inventé : le verso est recueilli et affichable, mais n’est pas lu automatiquement. Voir [les zones et limites](docs/CNI_ZONES.md).
+**Périmètre actuel :** un gabarit provisoire du recto à puce illustré par l’utilisateur. La classification ancien/nouveau est différée. Les références recto et verso du même type de carte sont maintenant décrites dans le gabarit. Les zones du verso sont réservées à la calibration : elles ne sont pas lues ni exportées car elles ne font pas partie des sept champs demandés. Le second modèle reste non défini. Voir [les zones et limites](docs/CNI_ZONES.md).
 
 ## Mettre à jour sur Windows
 
@@ -18,7 +18,7 @@ git pull origin main
 .\.venv\Scripts\python.exe -m app
 ```
 
-Le script reteste les modèles existants, y compris la reconnaissance directe des sept zones. Il ne les télécharge à nouveau que si le dossier n’existe pas. Le marqueur `zone_smoke_test` n’est activé qu’après réussite du test réel. Actualiser le navigateur avec Ctrl+F5.
+Le script vérifie les empreintes des modèles existants puis teste uniquement la reconnaissance directe des sept zones. Le test de l’ancien détecteur généraliste est optionnel avec `--check-legacy`. Il ne les télécharge à nouveau que si le dossier n’existe pas. Le marqueur `zone_smoke_test` n’est activé qu’après réussite du test réel. Actualiser le navigateur avec Ctrl+F5.
 
 Si `.venv-paddle` n’existe pas, le créer d’abord :
 

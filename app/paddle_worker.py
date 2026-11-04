@@ -5,6 +5,13 @@ from pathlib import Path
 import sys
 
 
+def progress(message):
+    # Setup-only, synthetic input. Production workers keep diagnostics disabled
+    # and their streams are discarded by the parent application.
+    if os.environ.get("EXTRACTEUR_PADDLE_DIAGNOSTICS") == "1":
+        print(f"[Paddle] {message}", flush=True)
+
+
 def collect_results(results):
     lines, tokens = [], []
     for result in results:
@@ -30,22 +37,29 @@ def main():
     os.environ["OMP_NUM_THREADS"] = "2"
     if len(sys.argv) == 5:
         job_file = Path(sys.argv[4])
+        progress("Import de TextRecognition…")
         from paddleocr import TextRecognition
+        progress("Import terminé. Chargement du modèle de reconnaissance latin sur CPU…")
         jobs = json.loads(job_file.read_text(encoding="utf-8"))
         recognizer = TextRecognition(model_name="latin_PP-OCRv5_mobile_rec", model_dir=str(models / "rec"),
                                      device="cpu", cpu_threads=2, enable_mkldnn=False)
+        progress("Modèle chargé.")
         zones = {}
         # Single model instance; retain explicit per-zone association instead of
         # relying on an undocumented batching/sorting order.
         for job in jobs:
+            progress(f"Lecture de la zone {job['field']}…")
             results = recognizer.predict(input=job["path"], batch_size=1)
             if len(results) != 1:
                 raise ValueError("Unexpected zone recognition output")
             zones[job["field"]] = {"text": str(results[0]["rec_text"]).strip(), "score": float(results[0]["rec_score"])}
         recognizer.close()
+        progress("Lecture des sept zones terminée.")
         output.write_text(json.dumps({"zones": zones}, ensure_ascii=False), encoding="utf-8")
         return
+    progress("Import de l’ancien pipeline généraliste…")
     from paddleocr import PaddleOCR
+    progress("Chargement de l’ancien détecteur et du reconnaisseur…")
 
     pipeline = PaddleOCR(
         text_detection_model_name="PP-OCRv5_mobile_det",
@@ -57,6 +71,7 @@ def main():
         use_textline_orientation=False,
         device="cpu", cpu_threads=2, enable_mkldnn=False,
     )
+    progress("Lecture de l’image synthétique par l’ancien pipeline…")
     payload = collect_results(pipeline.predict(str(image)))
     output.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 

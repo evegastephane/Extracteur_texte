@@ -14,9 +14,9 @@ Revoir les photos inchangées conserve les corrections : « Suivant » réouvre 
 
 ## Couverture provisoire
 
-Le seul profil est `cni_puce_recto_v1`, estimé sur le recto à puce fourni. Les deux exemples montrent le même type de recto, dont un tourné ; ils ne définissent ni verso ni second modèle. La classification ancien/nouveau est différée. La calibration et la précision sur de vraies CNI restent à mesurer.
+Le seul profil est `cni_puce_recto_v1`, estimé sur le recto à puce fourni. Les dernières références fournissent le recto et le verso du même type de carte. Leurs zones sont référencées sans intégrer les photos ou valeurs personnelles dans le dépôt ; aucun second modèle n’est encore défini. La classification ancien/nouveau est différée. La calibration et la précision sur de vraies CNI restent à mesurer.
 
-Le verso est obligatoire, décodé, aligné et affichable pour relecture, mais **n’est pas lu par OCR** : aucune zone verso n’est définie. Cette limite est affichée. Deux photos strictement identiques sont refusées ; deux photos différentes de rectos ne sont pas reconnues comme telles. Le recadrage ne constitue pas un contrôle d’identité. Une carte d’une autre disposition peut produire des champs erronés.
+Le verso est obligatoire, décodé, aligné et affichable pour relecture, mais **n’est pas lu par OCR** : ses zones sont référencées pour calibration mais leurs valeurs sont hors des sept champs autorisés. Cette limite est affichée. Deux photos strictement identiques sont refusées ; deux photos différentes de rectos ne sont pas reconnues comme telles. Le recadrage ne constitue pas un contrôle d’identité. Une carte d’une autre disposition peut produire des champs erronés.
 
 ## Préparation et API
 
@@ -28,7 +28,7 @@ Le navigateur communique avec le serveur local lié à `127.0.0.1`. Aucun docume
 
 ## Vérification actuelle
 
-106 tests réussis, 2 tests d’inférence réelle Paddle ignorés faute de poids préparés. L’alignement synthétique et certains contrôles de découpe sont réels ; ces derniers utilisent explicitement Tesseract comme substitution, sans valider Paddle. Chromium vérifie l’alignement et l’erreur de moteur absent, puis une réponse Paddle simulée pour le parcours, les corrections, exports, remise à zéro et mobile. Le défaut de perte des corrections après simple relecture a été corrigé en réutilisant le résultat ; le test navigateur final passe.
+111 tests réussis, 2 tests d’inférence réelle Paddle ignorés faute de poids préparés. L’alignement synthétique et certains contrôles de découpe sont réels ; ces derniers utilisent explicitement Tesseract comme substitution, sans valider Paddle. Chromium vérifie l’alignement et l’erreur de moteur absent, puis une réponse Paddle simulée pour le parcours, les corrections, exports, remise à zéro et mobile. Le défaut de perte des corrections après simple relecture a été corrigé en réutilisant le résultat ; le test navigateur final passe.
 
 Captures revues : `.test-artifacts/desktop-wizard-recto.png`, `desktop-wizard-results.png`, `mobile-wizard-recto.png`, `mobile-wizard-results.png` dans le même dossier. Elles ne prouvent pas une reconnaissance Paddle réelle. La précision sur les CNI fournies et la validation native Windows ne sont pas établies.
 
