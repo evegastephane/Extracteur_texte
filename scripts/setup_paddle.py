@@ -22,6 +22,17 @@ MODELS = {"det": "PP-OCRv5_mobile_det", "rec": "latin_PP-OCRv5_mobile_rec"}
 BASE = "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0"
 
 
+def write_manifest(path, manifest):
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, prefix="manifest_", suffix=".tmp", delete=False) as stream:
+        temporary = Path(stream.name)
+        json.dump(manifest, stream, indent=2)
+        stream.write("\n")
+    try:
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def download_model(name, destination):
     archive = destination.parent / f"{name}.tar"
     url = f"{BASE}/{name}_infer.tar"
@@ -58,8 +69,12 @@ def smoke_test(models):
     with tempfile.TemporaryDirectory(prefix="paddle_setup_") as temp:
         directory = Path(temp)
         with Image.new("RGB", (900, 200), "white") as image:
-            ImageDraw.Draw(image).text((40, 60), "LOCAL OCR 123", font=font, fill="black")
+            draw = ImageDraw.Draw(image)
+            draw.text((40, 60), "LOCAL OCR 123", font=font, fill="black")
             image.save(directory / "smoke.png")
+            left, top, right, bottom = draw.textbbox((40, 60), "LOCAL OCR 123", font=font)
+            with image.crop((left - 8, top - 8, right + 8, bottom + 8)) as line:
+                line.save(directory / "zone-smoke.png")
         result = subprocess.run([sys.executable, str(ROOT / "app/paddle_worker.py"),
             str(directory / "smoke.png"), str(directory / "result.json"), str(models)],
             timeout=90, check=False)
@@ -68,6 +83,16 @@ def smoke_test(models):
         recognized = json.loads((directory / "result.json").read_text(encoding="utf-8"))["text"]
         if "LOCAL" not in recognized.upper() or "123" not in recognized:
             raise RuntimeError("Le moteur n’a pas reconnu le texte synthétique attendu.")
+        fields = ("nom", "prenoms", "date_naissance", "lieu_naissance", "sexe", "taille", "profession")
+        jobs = [{"field": field, "path": str(directory / "zone-smoke.png")} for field in fields]
+        (directory / "zones.json").write_text(json.dumps(jobs), encoding="utf-8")
+        result = subprocess.run([sys.executable, str(ROOT / "app/paddle_worker.py"),
+            str(directory / "smoke.png"), str(directory / "zones-result.json"), str(models), str(directory / "zones.json")], timeout=90, check=False)
+        if result.returncode != 0:
+            raise RuntimeError("Le test du moteur par zones a échoué.")
+        zones = json.loads((directory / "zones-result.json").read_text(encoding="utf-8"))["zones"]
+        if set(zones) != set(fields) or any("LOCAL" not in zone["text"].upper() or "123" not in zone["text"] for zone in zones.values()):
+            raise RuntimeError("La reconnaissance directe des zones n’a pas réussi le test synthétique.")
 
 
 def main():
@@ -79,7 +104,13 @@ def main():
         spec.loader.exec_module(integrity)
         if not integrity.models_valid(DESTINATION):
             raise SystemExit("Les modèles existants ne correspondent pas au manifeste. Préservez ou renommez .ocr-data/paddle avant réinstallation.")
+        manifest_path = DESTINATION / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["zone_smoke_test"] = "pending"
+        write_manifest(manifest_path, manifest)
         smoke_test(DESTINATION)
+        manifest["zone_smoke_test"] = "passed"
+        write_manifest(manifest_path, manifest)
         print("PaddleOCR : test réel réussi avec les modèles existants.")
         return
     DESTINATION.parent.mkdir(exist_ok=True)
@@ -94,8 +125,8 @@ def main():
         smoke_test(prepared)
         files = {str(path.relative_to(prepared)).replace(os.sep, "/"): hashlib.sha256(path.read_bytes()).hexdigest()
                  for path in prepared.rglob("*") if path.is_file()}
-        manifest = {"models": MODELS, "files": files, "sources": sources, "smoke_test": "passed"}
-        (prepared / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        manifest = {"models": MODELS, "files": files, "sources": sources, "smoke_test": "passed", "zone_smoke_test": "passed"}
+        write_manifest(prepared / "manifest.json", manifest)
         shutil.move(str(prepared), DESTINATION)
     print("PaddleOCR prêt : modèles locaux et test réel réussis. Redémarrez l’application.")
 

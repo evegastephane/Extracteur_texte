@@ -1,262 +1,154 @@
 "use strict";
-const $ = (id) => document.getElementById(id);
-const input = $("image"), preview = $("preview"), text = $("text"), status = $("status");
-let paddleAvailable = null;
-function updateEngine() {
-  const paddle = $("engine").value === "paddleocr";
-  $("language").disabled = busy || paddle;
-  $("layout").disabled = paddle;
-  $("engine-help").textContent = !paddle ? "Tesseract utilise la langue et la disposition choisies ci-dessous." : paddleAvailable === false ? "PaddleOCR n’est pas installé ou ses modèles ne sont pas prêts. Voir le guide PaddleOCR dans la documentation du projet. Tesseract reste disponible." : "PaddleOCR lit le français et l’anglais avec le même modèle latin. La disposition est détectée automatiquement. Le démarrage peut prendre jusqu’à 90 secondes.";
+const $ = id => document.getElementById(id);
+const fieldNames = {nom:"Nom", prenoms:"Prénoms", date_naissance:"Date de naissance", lieu_naissance:"Lieu de naissance", sexe:"Sexe", taille:"Taille", profession:"Profession"};
+let step = 1, busy = false, result = null;
+const photos = {recto: null, verso: null}, fieldInputs = {};
+const side = () => step === 1 ? "recto" : "verso";
+const announce = (message, error = false) => { $("status").textContent = message; $("status").className = error ? "status error" : "status"; };
+for (const [key, name] of Object.entries(fieldNames)) {
+  const group = document.createElement("div"); group.className = "field";
+  const label = document.createElement("label"); label.htmlFor = `field-${key}`; label.textContent = name;
+  const input = document.createElement("input"); input.id = `field-${key}`; input.type = "text"; input.maxLength = 200; input.autocomplete = "off"; input.spellcheck = false;
+  const note = document.createElement("small"); note.id = `note-${key}`; input.setAttribute("aria-describedby", note.id);
+  input.addEventListener("input", () => { group.dataset.state = "modifie"; note.textContent = "Modifié manuellement — à vérifier sur la carte."; updateCount(); });
+  group.append(label, input, note); $("field-list").append(group); fieldInputs[key] = input;
 }
-let selected = null, previewURL = null, busy = false;
-let retainedFields = null, retainedEngine = null;
-const fieldNames = {nom: "Nom", prenoms: "Prénoms", date_naissance: "Date de naissance", lieu_naissance: "Lieu de naissance", sexe: "Sexe", taille: "Taille", profession: "Profession"};
-const fieldInputs = {};
-for (const [key, labelText] of Object.entries(fieldNames)) {
-  const group = document.createElement("div"); group.className = "retained-field";
-  const label = document.createElement("label"); label.htmlFor = `field-${key}`; label.textContent = labelText;
-  const field = document.createElement("input"); field.type = "text"; field.id = `field-${key}`; field.maxLength = 200;
-  field.autocomplete = "off"; field.spellcheck = false; field.setAttribute("aria-describedby", `field-note-${key}`);
-  const note = document.createElement("small"); note.id = `field-note-${key}`;
-  field.addEventListener("input", () => { note.textContent = "Modifié manuellement — à vérifier."; updateRetainedText(); });
-  group.append(label, field, note); $("field-list").append(group); fieldInputs[key] = field;
+function updateCount() {
+  const count = Object.values(fieldInputs).filter(input => input.value.trim()).length;
+  $("count").textContent = `${count}/7 champs renseignés`;
+  $("copy").disabled = count === 0; $("download").disabled = count === 0;
 }
-function updateRetainedText() {
-  text.value = Object.entries(fieldNames).filter(([key]) => fieldInputs[key].value.trim()).map(([key, label]) => `${label} : ${fieldInputs[key].value.trim()}`).join("\n");
-  updateActions();
+function discardPhoto(key) {
+  if (photos[key]) URL.revokeObjectURL(photos[key].url);
+  photos[key] = null;
 }
-function showFields(fields, engine = null) {
-  retainedFields = fields; retainedEngine = engine;
-  $("fields").hidden = !fields; $("fields").disabled = busy || !fields;
-  for (const key of Object.keys(fieldNames)) {
-    const field = fields?.[key]; fieldInputs[key].value = field?.value || "";
-    const note = $(`field-note-${key}`);
-    note.textContent = field?.message || "";
-    if (field?.evidence?.length > 1) note.textContent += " Propositions : " + field.evidence.map(item => item.value).join(" / ");
-    else if (field?.evidence?.length === 1) note.textContent += ` Libellé « ${field.evidence[0].label} », valeur à ${field.evidence[0].relation === "droite" ? "droite" : "la ligne suivante"}.`;
+function clearResult() {
+  result = null;
+  for (const input of Object.values(fieldInputs)) input.value = "";
+  $("result-front").removeAttribute("src"); $("result-back").removeAttribute("src");
+  document.querySelector(".photos").open = false;
+}
+function renderStep(focus = true) {
+  $("upload-step").hidden = step === 3;
+  $("result-step").hidden = step !== 3 || !result;
+  $("loading-step").hidden = true;
+  for (let n = 1; n <= 3; n++) {
+    if (n === step) $(`step-${n}`).setAttribute("aria-current", "step");
+    else $(`step-${n}`).removeAttribute("aria-current");
   }
-  updateRetainedText();
+  if (step < 3) {
+    const key = side(), photo = photos[key];
+    $("upload-title").textContent = `Ajoutez le ${key}`;
+    $("side-count").textContent = `Photo ${step} sur 2`;
+    $("choose-label").textContent = `Choisir le ${key}`;
+    $("upload-instruction").textContent = step === 1 ? "Photographiez la face qui porte le nom et le portrait, avec les quatre coins visibles." : "Ajoutez maintenant l’autre face de la même carte.";
+    $("back-notice").hidden = step !== 2;
+    $("back").hidden = step === 1;
+    $("return-results").hidden = !result;
+    $("preview").hidden = !photo; $("empty-upload").hidden = !!photo; $("photo-tools").hidden = !photo;
+    if (photo) $("preview").src = photo.url;
+    else $("preview").removeAttribute("src");
+    $("next").disabled = busy || !photo;
+    if (focus) $("upload-title").focus();
+  } else if (focus) $("result-title").focus();
 }
-const canvas = $("selection-canvas"), ctx = canvas.getContext("2d");
-let sourceImage = null, rotation = 0, corners = fullCorners(), placing = -1, dragging = -1;
-function fullCorners() { return [[0, 0], [1, 0], [1, 1], [0, 1]]; }
-const cornerNames = ["Haut gauche", "Haut droit", "Bas droit", "Bas gauche"];
-cornerNames.forEach((name, index) => {
-  const group = document.createElement("div");
-  const title = document.createElement("span"); title.textContent = `${index + 1}. ${name}`; group.append(title);
-  const pair = document.createElement("div"); pair.className = "coordinate-pair";
-  ["X (%)", "Y (%)"].forEach((axis, coordinate) => {
-    const label = document.createElement("label"); label.textContent = axis;
-    const field = document.createElement("input"); field.type = "number"; field.min = "0"; field.max = "100"; field.step = "0.1";
-    field.setAttribute("aria-label", `${name}, ${axis}`); field.id = `corner-${index}-${coordinate}`;
-    field.addEventListener("input", () => {
-      if (!Number.isFinite(field.valueAsNumber)) return;
-      corners[index][coordinate] = Math.min(100, Math.max(0, field.valueAsNumber)) / 100;
-      drawSelection(false);
-    });
-    label.append(field); pair.append(label);
-  });
-  group.append(pair); $("corner-inputs").append(group);
-});
-function drawSelection(sync = true) {
-  if (!sourceImage) return;
-  const swapped = rotation % 180 !== 0;
-  const width = swapped ? sourceImage.naturalHeight : sourceImage.naturalWidth;
-  const height = swapped ? sourceImage.naturalWidth : sourceImage.naturalHeight;
-  const scale = Math.min(1, 1200 / Math.max(width, height));
-  canvas.width = Math.round(width * scale); canvas.height = Math.round(height * scale);
-  ctx.save(); ctx.translate(canvas.width / 2, canvas.height / 2); ctx.rotate(rotation * Math.PI / 180);
-  ctx.drawImage(sourceImage, -sourceImage.naturalWidth * scale / 2, -sourceImage.naturalHeight * scale / 2, sourceImage.naturalWidth * scale, sourceImage.naturalHeight * scale); ctx.restore();
-  if ($("crop-enabled").checked) {
-    ctx.lineWidth = Math.max(2, canvas.width / 300); ctx.strokeStyle = "#255e48"; ctx.fillStyle = "#255e4820";
-    ctx.beginPath(); corners.forEach(([x, y], index) => index ? ctx.lineTo(x * canvas.width, y * canvas.height) : ctx.moveTo(x * canvas.width, y * canvas.height)); ctx.closePath(); ctx.fill(); ctx.stroke();
-    const radius = Math.max(12, canvas.width / 45);
-    corners.forEach(([x, y], index) => {
-      ctx.beginPath(); ctx.arc(x * canvas.width, y * canvas.height, radius, 0, Math.PI * 2); ctx.fillStyle = "#255e48"; ctx.fill();
-      ctx.fillStyle = "#fff"; ctx.font = `bold ${radius}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(index + 1), x * canvas.width, y * canvas.height);
-    });
-  }
-  $("rotation-label").textContent = `${rotation}°`;
-  if (sync) corners.forEach((point, index) => point.forEach((value, coordinate) => { $(`corner-${index}-${coordinate}`).value = String(Math.round(value * 1000) / 10); }));
+function setBusy(value) {
+  busy = value;
+  for (const id of ["image", "back", "return-results", "change-photo", "flip-photo", "next"]) $(id).disabled = value;
+  if (!value && step < 3) $("next").disabled = !photos[side()];
+  $("upload-step").setAttribute("aria-busy", String(value));
 }
-function pointerPoint(event) {
-  const box = canvas.getBoundingClientRect();
-  return [Math.min(1, Math.max(0, (event.clientX - box.left) / box.width)), Math.min(1, Math.max(0, (event.clientY - box.top) / box.height))];
-}
-canvas.addEventListener("click", event => event.preventDefault());
-canvas.addEventListener("pointerdown", event => {
-  event.preventDefault();
-  if (busy || !$("crop-enabled").checked) return;
-  const point = pointerPoint(event);
-  if (placing >= 0) {
-    corners[placing++] = point;
-    if (placing === 4) { placing = -1; announce("Quatre coins placés. Ajustez les poignées si nécessaire."); }
-    else announce(`Placez le coin ${placing + 1} : ${cornerNames[placing].toLowerCase()}.`);
-    drawSelection(); return;
-  }
-  const distances = corners.map(([x, y]) => Math.hypot(x - point[0], y - point[1]));
-  dragging = distances.indexOf(Math.min(...distances));
-  canvas.setPointerCapture(event.pointerId); corners[dragging] = point; drawSelection();
-});
-canvas.addEventListener("pointermove", event => { if (dragging >= 0 && !busy) { corners[dragging] = pointerPoint(event); drawSelection(); } });
-for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) canvas.addEventListener(name, () => { dragging = -1; });
-$("rotate").addEventListener("click", () => { rotation = (rotation + 90) % 360; corners = fullCorners(); placing = -1; drawSelection(); announce("Image tournée. La sélection a été réinitialisée."); });
-$("reset-selection").addEventListener("click", () => { corners = fullCorners(); placing = -1; $("crop-enabled").checked = false; $("crop-tools").hidden = true; drawSelection(); });
-$("crop-enabled").addEventListener("change", () => { placing = -1; $("crop-tools").hidden = !$("crop-enabled").checked; drawSelection(); });
-$("place-corners").addEventListener("click", () => { placing = 0; announce("Sur l’image, placez le coin 1 : haut gauche."); });
-
-function announce(message, kind = "") {
-  status.textContent = message;
-  status.className = `status ${kind}`;
-}
-function updateActions() {
-  const available = !busy && text.value.length > 0;
-  $("copy").disabled = !available;
-  $("download").disabled = !available;
-  $("download-json").disabled = busy || !retainedFields;
-  const count = Object.values(fieldInputs).filter(field => field.value.trim()).length;
-  $("count").textContent = retainedFields ? `${count}/7 champs renseignés` : "En attente d’une image";
-}
-function clearImage() {
-  if (previewURL) URL.revokeObjectURL(previewURL);
-  previewURL = null;
-  selected = null;
-  sourceImage = null; rotation = 0; corners = fullCorners(); placing = -1;
-  canvas.hidden = true; $("adjustments").disabled = true;
-  $("crop-enabled").checked = false; $("crop-tools").hidden = true;
-  showFields(null);
-  preview.removeAttribute("src");
-  preview.hidden = true;
-  $("upload-content").hidden = false;
-  $("change-image").hidden = true;
-  text.value = "";
-  text.disabled = true;
-  $("extract").disabled = true;
-  $("image-help").textContent = "Une image à la fois, jusqu’à 20 millions de pixels.";
-  updateActions();
-}
-async function selectFile(file) {
-  if (busy || !file) return;
-  clearImage();
-  if (!["image/png", "image/jpeg"].includes(file.type)) {
-    announce("Choisissez une image PNG ou JPEG.", "error"); return;
-  }
-  if (file.size > 10 * 1024 * 1024 || file.size === 0) {
-    announce("L’image doit être non vide et ne pas dépasser 10 Mio.", "error"); return;
-  }
-  const url = URL.createObjectURL(file);
-  previewURL = url;
-  const probe = new Image();
-  probe.src = url;
+async function requestJSON(url, body, timeout) {
+  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), timeout);
   try {
-    await probe.decode();
-    if (previewURL !== url) return;
-    if (probe.naturalWidth * probe.naturalHeight > 20_000_000) throw new Error("L’image dépasse 20 millions de pixels. Réduisez ses dimensions.");
-    selected = file;
-    preview.src = url;
-    sourceImage = probe; canvas.hidden = false; $("adjustments").disabled = false; drawSelection(); updateEngine();
-    $("upload-content").hidden = true;
-    $("change-image").hidden = false;
-    $("image-help").textContent = `${file.name} · ${(file.size / 1024 / 1024).toLocaleString("fr-FR", {maximumFractionDigits: 2})} Mio`;
-    $("extract").disabled = false;
-    announce("Image prête. Vérifiez la langue, puis lancez l’extraction.");
-  } catch (error) {
-    if (previewURL !== url) return;
-    clearImage();
-    announce(error.message.startsWith("L’image dépasse") ? error.message : "Impossible de lire cette image. Essayez un autre fichier.", "error");
-  }
+    const response = await fetch(url, {method:"POST", body, signal:controller.signal});
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error?.message || "Le traitement a échoué. Réessayez.");
+    return payload;
+  } finally { clearTimeout(timer); }
 }
-input.addEventListener("change", () => { const file = input.files[0]; input.value = ""; selectFile(file); });
-const dropzone = $("dropzone");
-for (const name of ["dragenter", "dragover"]) dropzone.addEventListener(name, (event) => {
-  event.preventDefault(); if (!busy) dropzone.classList.add("dragging");
-});
-for (const name of ["dragleave", "drop"]) dropzone.addEventListener(name, (event) => {
-  event.preventDefault(); dropzone.classList.remove("dragging");
-});
-dropzone.addEventListener("drop", (event) => {
-  if (busy) return;
-  if (event.dataTransfer.files.length !== 1) {
-    announce("Déposez une seule image à la fois.", "error"); return;
-  }
-  selectFile(event.dataTransfer.files[0]);
-});
-$("ocr-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  if (!selected || busy) return;
-  const originalText = text.value, wasDisabled = text.disabled;
-  const engine = $("engine").value;
-  busy = true;
-  $("engine").disabled = true;
-  text.disabled = true; $("adjustments").disabled = true;
-  $("fields").disabled = true;
-  input.disabled = true; $("language").disabled = true; $("extract").disabled = true;
-  $("extract").textContent = "Extraction en cours…";
-  document.querySelector(".result").setAttribute("aria-busy", "true");
-  updateActions();
-  announce("Lecture de l’image en cours. Cela peut prendre quelques secondes.", "busy");
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), engine === "paddleocr" ? 105000 : 40000);
+function errorMessage(error) {
+  if (error.name === "AbortError") return "Le traitement a dépassé le délai d’attente. Les photos restent disponibles pour réessayer.";
+  if (error instanceof TypeError) return "Le service local ne répond pas. Vérifiez qu’il est démarré.";
+  return error.message;
+}
+async function upload(file) {
+  if (!file || busy || step === 3) return;
+  if (!file.size || file.size > 10 * 1024 * 1024) { announce("Choisissez une photo non vide de 10 Mio maximum.", true); return; }
+  if (file.type && !["image/png", "image/jpeg"].includes(file.type)) { announce("Choisissez une photo PNG ou JPEG.", true); return; }
+  const key = side(); setBusy(true); announce("Recadrage automatique de la carte en cours…");
   try {
-    const form = new FormData();
-    form.append("image", selected); form.append("language", $("language").value);
-    form.append("engine", engine);
-    form.append("structured", "true");
-    form.append("options", JSON.stringify({rotation, corners: $("crop-enabled").checked ? corners : null, mode: $("processing").value, layout: $("layout").value, deskew: $("deskew").checked}));
-    const response = await fetch("/api/ocr", {method: "POST", body: form, signal: controller.signal});
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || "L’extraction a échoué. Réessayez.");
-    if (!data.fields) throw new Error("La version du serveur ne fournit pas les champs. Mettez à jour puis redémarrez l’application.");
-    showFields(data.fields, data.engine);
-    text.disabled = false;
-    announce(data.text ? "Champs repérés. Vérifiez les propositions ; les autres informations sont écartées." : "Aucun des sept champs n’a été repéré avec une valeur. Vérifiez l’image ou renseignez les champs manuellement.");
-    fieldInputs.nom.focus();
+    const form = new FormData(); form.append("image", file);
+    const data = await requestJSON("/api/cni/align", form, 30000);
+    const bytes = Uint8Array.from(atob(data.image), char => char.charCodeAt(0));
+    const blob = new Blob([bytes], {type:"image/png"});
+    discardPhoto(key); photos[key] = {blob, url:URL.createObjectURL(blob)};
+    // A changed front invalidates the old back; never combine different cards.
+    if (key === "recto") discardPhoto("verso");
+    clearResult(); renderStep(false);
+    announce(data.alignment.method === "image_cadree" ? "Vérifiez que la carte occupe tout le cadre et que le texte est à l’endroit, puis appuyez sur Suivant." : "Carte recadrée. Vérifiez que les quatre bords sont présents et que le texte est à l’endroit, puis appuyez sur Suivant.");
   } catch (error) {
-    text.value = originalText; text.disabled = wasDisabled;
-    announce(error.name === "AbortError" ? "Le délai d’attente est dépassé. Réessayez avec une image plus petite." : error.message === "Failed to fetch" ? "Le service local ne répond pas. Vérifiez qu’il est démarré, puis réessayez." : error.message, "error");
-  } finally {
-    clearTimeout(timer);
-    busy = false; input.disabled = false; $("language").disabled = false;
-    $("engine").disabled = false;
-    $("adjustments").disabled = false;
-    $("fields").disabled = !retainedFields;
-    $("extract").disabled = !selected;
-    $("extract").textContent = "Repérer les champs →";
-    document.querySelector(".result").setAttribute("aria-busy", "false");
-    updateActions();
-    updateEngine();
-  }
+    announce(errorMessage(error) + (photos[key] ? " La photo précédente est conservée." : ""), true);
+  } finally { setBusy(false); }
+}
+$("image").addEventListener("change", () => { const file = $("image").files[0]; $("image").value = ""; upload(file); });
+$("change-photo").addEventListener("click", () => $("image").click());
+for (const name of ["dragenter", "dragover"]) $("dropzone").addEventListener(name, event => { event.preventDefault(); if (!busy) $("dropzone").classList.add("dragging"); });
+for (const name of ["dragleave", "drop"]) $("dropzone").addEventListener(name, event => { event.preventDefault(); $("dropzone").classList.remove("dragging"); });
+$("dropzone").addEventListener("drop", event => { if (event.dataTransfer.files.length !== 1) announce("Ajoutez une seule face à la fois.", true); else upload(event.dataTransfer.files[0]); });
+$("flip-photo").addEventListener("click", async () => {
+  if (busy || !photos[side()]) return;
+  const key = side(); setBusy(true);
+  try {
+    const bitmap = await createImageBitmap(photos[key].blob), canvas = document.createElement("canvas");
+    canvas.width = bitmap.width; canvas.height = bitmap.height;
+    const context = canvas.getContext("2d"); context.translate(canvas.width, canvas.height); context.rotate(Math.PI); context.drawImage(bitmap, 0, 0); bitmap.close();
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Impossible de retourner cette photo.");
+    discardPhoto(key); photos[key] = {blob, url:URL.createObjectURL(blob)};
+    clearResult(); renderStep(false); announce("Image retournée. Vérifiez le sens du texte.");
+  } catch (error) { announce(errorMessage(error), true); }
+  finally { setBusy(false); }
 });
-text.addEventListener("input", updateActions);
+$("back").addEventListener("click", () => { if (!busy) { step = 1; renderStep(); announce("Vous pouvez revoir le recto."); } });
+$("next").addEventListener("click", async () => {
+  if (busy || !photos[side()]) return;
+  if (step === 1) { step = 2; renderStep(); announce("Ajoutez le verso de la même carte."); return; }
+  if (result) { step = 3; renderStep(); announce("Photos inchangées : vos corrections sont conservées."); return; }
+  setBusy(true); step = 3; renderStep(false); $("loading-step").hidden = false; $("result-step").hidden = true; $("loading-title").focus();
+  announce("PaddleOCR lit les sept zones prédéfinies du recto…");
+  try {
+    const form = new FormData(); form.append("recto", photos.recto.blob, "recto.png"); form.append("verso", photos.verso.blob, "verso.png");
+    const data = await requestJSON("/api/cni/read", form, 105000);
+    if (!data.fields || Object.keys(fieldNames).some(key => !data.fields[key])) throw new Error("Le serveur n’a pas renvoyé les sept champs attendus.");
+    $("engine-warning").hidden = true;
+    result = data;
+    for (const key of Object.keys(fieldNames)) {
+      const field = data.fields[key]; fieldInputs[key].value = field.value || "";
+      fieldInputs[key].parentElement.dataset.state = field.status;
+      $(`note-${key}`).textContent = field.message;
+    }
+    $("result-front").src = photos.recto.url; $("result-back").src = photos.verso.url;
+    updateCount(); renderStep(); announce("Lecture terminée. Vérifiez les valeurs proposées avant de les exporter.");
+  } catch (error) { step = 2; renderStep(); announce(errorMessage(error), true); }
+  finally { setBusy(false); }
+});
+function retainedText() { return Object.entries(fieldNames).filter(([key]) => fieldInputs[key].value.trim()).map(([key, name]) => `${name} : ${fieldInputs[key].value.trim()}`).join("\n"); }
+function download(content, type, filename) {
+  const url = URL.createObjectURL(new Blob([content], {type})), link = document.createElement("a");
+  link.href = url; link.download = filename; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 $("copy").addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(text.value);
-    announce("Texte copié dans le presse-papiers.");
-  } catch {
-    document.querySelector(".retained-summary").open = true;
-    text.focus(); text.select();
-    announce("Copie automatique indisponible. Le texte est sélectionné : utilisez Ctrl+C ou Cmd+C.");
-  }
+  try { await navigator.clipboard.writeText(retainedText()); announce("Champs copiés."); }
+  catch { announce("Le presse-papiers n’est pas disponible. Utilisez l’export TXT.", true); }
 });
-$("download").addEventListener("click", () => {
-  const url = URL.createObjectURL(new Blob([text.value], {type: "text/plain;charset=utf-8"}));
-  const link = document.createElement("a");
-  link.href = url; link.download = "champs-retenus.txt"; link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  announce("Le fichier texte a été préparé pour le téléchargement.");
-});
+$("download").addEventListener("click", () => { download(retainedText(), "text/plain;charset=utf-8", "champs-cni.txt"); announce("Export TXT préparé."); });
 $("download-json").addEventListener("click", () => {
-  const fields = Object.fromEntries(Object.entries(fieldNames).map(([key, label]) => {
-    const value = fieldInputs[key].value.trim();
-    return [key, {libelle: label, valeur: value, statut: value !== retainedFields[key].value ? "modifie_manuellement" : retainedFields[key].status}];
-  }));
-  const url = URL.createObjectURL(new Blob([JSON.stringify({moteur: retainedEngine, champs: fields}, null, 2)], {type: "application/json;charset=utf-8"}));
-  const link = document.createElement("a"); link.href = url; link.download = "champs-retenus.json"; link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  announce("Export JSON des sept champs préparé.");
+  const fields = Object.fromEntries(Object.entries(fieldNames).map(([key, label]) => [key, {libelle:label, valeur:fieldInputs[key].value.trim(), statut:fieldInputs[key].value.trim() !== result.fields[key].value ? "modifie_manuellement" : result.fields[key].status}]));
+  download(JSON.stringify({moteur:"paddleocr", gabarit:result.profile, champs:fields}, null, 2), "application/json;charset=utf-8", "champs-cni.json"); announce("Export JSON préparé.");
 });
-fetch("/health").then((response) => {
-  if (!response.ok && !selected) announce("Le moteur OCR n’est pas prêt. Consultez le guide d’installation.", "error");
-}).catch(() => { if (!selected) announce("Le service local est indisponible. Vérifiez son démarrage.", "error"); });
-$("engine").addEventListener("change", updateEngine);
-fetch("/api/engines").then(response => response.json()).then(data => { paddleAvailable = data.paddleocr.ready; updateEngine(); }).catch(() => { paddleAvailable = null; });
+$("review-photos").addEventListener("click", () => { step = 1; renderStep(); announce("Les corrections sont conservées tant que les photos ne changent pas."); });
+$("return-results").addEventListener("click", () => { if (!busy && result) { step = 3; renderStep(); announce("Corrections précédentes conservées."); } });
+$("restart").addEventListener("click", () => { discardPhoto("recto"); discardPhoto("verso"); clearResult(); step = 1; renderStep(); announce("Ajoutez le recto de la nouvelle carte."); });
+fetch("/api/cni/status").then(response => response.json()).then(data => { $("engine-warning").hidden = data.ready; }).catch(() => { announce("Le service local n’est pas disponible. Vérifiez son démarrage.", true); });
+renderStep(false);

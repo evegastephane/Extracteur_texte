@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-03T20:21:01Z",
-  "title": "Design System: Extracteur",
+  "generatedAt": "2026-11-04T04:28:52Z",
+  "title": "Design System: Extracteur CNI",
   "extensions": {
     "colorMeta": {
       "accent": {
@@ -18,21 +18,17 @@
       },
       "error": {
         "role": "error",
-        "displayName": "Error red"
-      },
-      "selection-surface": {
-        "role": "neutral",
-        "displayName": "Selection canvas surface"
+        "displayName": "Review warning red"
       }
     },
     "typographyMeta": {
       "display": {
         "displayName": "Serif introduction",
-        "purpose": "Main page heading."
+        "purpose": "Votre carte, étape par étape."
       },
       "body": {
         "displayName": "System sans",
-        "purpose": "Controls and retained fields; the filtered read-only summary uses 14px text."
+        "purpose": "Wizard instructions, actions and seven fields."
       }
     },
     "shadows": [],
@@ -40,46 +36,35 @@
       {
         "name": "state-transition",
         "value": "background .18s ease-out",
-        "purpose": "Button and upload hover backgrounds."
+        "purpose": "Button state changes."
       },
       {
-        "name": "busy",
+        "name": "loading",
         "value": "spin .8s linear infinite",
-        "purpose": "OCR busy indicator; animations and transitions are disabled for reduced motion."
+        "purpose": "Reading state; reduced motion removes animation/transitions."
       }
     ],
     "breakpoints": [
       {
-        "name": "stacked",
-        "value": "760px"
-      },
-      {
-        "name": "compact-preparation",
-        "value": "420px"
+        "name": "mobile",
+        "value": "620px"
       }
     ],
     "focus": {
       "outline": "3px solid var(--accent)",
-      "outlineOffset": "4px",
-      "uploadOutlineOffset": "3px"
+      "outlineOffset": "4px"
     },
-    "selection": {
-      "order": [
-        "top-left",
-        "top-right",
-        "bottom-right",
-        "bottom-left"
+    "wizard": {
+      "steps": [
+        "Recto",
+        "Verso",
+        "Résultats"
       ],
-      "coordinates": "Normalized 0–1 after EXIF orientation and requested rotation; keyboard fields display percentages.",
-      "preview": "Geometry only; tonal filters are not previewed.",
-      "interaction": "Drag numbered green handles or edit X/Y fields; rotating resets the selection."
-    },
-    "engineBehavior": {
-      "default": "tesseract",
-      "optional": "paddleocr",
-      "paddleControls": "Language and layout selects disabled; geometry and filters shared.",
-      "availabilityHint": "Explain missing installation/models without claiming model accuracy or verified inference.",
-      "failure": "Show the selected engine error without silent fallback and preserve previous editor text."
+      "panels": "Only one current panel; dedicated loading panel during reading.",
+      "alignment": "Automatic quadrilateral projection to 1600 × 1000; user checks orientation and may flip 180 degrees.",
+      "settings": "No engine, filter, language or corner controls.",
+      "reuse": "Unchanged-photo review reopens edited results without OCR; changes invalidate results, and changing recto clears previous verso.",
+      "verso": "Required, decoded, aligned and displayable; no automatic reading or verso template."
     },
     "fieldOutput": {
       "keys": [
@@ -91,100 +76,83 @@
         "taille",
         "profession"
       ],
-      "defaultApi": "structured=true; seven fields and filtered summary. Raw OCR requires explicit technical structured=false.",
       "statuses": [
-        "propose",
         "non_trouve",
         "a_verifier",
+        "propose",
         "modifie_manuellement"
       ],
-      "interaction": "Edit only the seven fields. Failed extraction preserves corrections; successful extraction replaces all seven. No free-form zone append.",
-      "summary": "Read-only, filled retained fields only; copy/TXT use summary; JSON retains all seven field keys.",
-      "evidence": "Field-specific labels/candidates and positions, with no artificial confidence percentage."
+      "exports": "Copy/TXT contain filled fields; JSON retains seven field keys, statuses and provisional profile.",
+      "source": "Seven fixed recto value zones in provisional cni_puce_recto_v1, no label search.",
+      "engine": "One Paddle TextRecognition instance for seven crops; no automatic Tesseract fallback.",
+      "scope": "Old/new classification deferred; no identity/authenticity check or established real-card accuracy."
     }
   },
   "components": [
     {
-      "name": "Extraction button",
+      "name": "Primary action",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Primary action to locate the seven fields by labels and spatial rules.",
-      "html": "<button class=\"ds-primary\">Repérer les champs →</button>",
-      "css": ".ds-primary{font:600 16px system-ui,sans-serif;min-height:46px;padding:10px 17px;border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:#fff;cursor:pointer;transition:background .18s ease-out}.ds-primary:hover:enabled{background:#1b4937}.ds-primary:focus-visible{outline:3px solid var(--accent);outline-offset:4px}.ds-primary:disabled{opacity:.48;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-primary{transition:none}}"
+      "description": "Advance to the next face or start a new card.",
+      "html": "<button class=\"ds-primary\">Suivant →</button>",
+      "css": ".ds-primary{font:600 16px system-ui,sans-serif;min-height:46px;padding:10px 17px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);cursor:pointer;transition:background .18s ease-out;background:var(--accent);border-color:var(--accent);color:#fff}.ds-primary:hover:enabled{background:#1b4937}.ds-primary:focus-visible{outline:3px solid var(--accent);outline-offset:4px}.ds-primary:disabled{opacity:.45;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-primary{transition:none}}"
     },
     {
-      "name": "Result action",
+      "name": "Secondary action",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "Copy, TXT or JSON action restricted to the seven retained fields.",
-      "html": "<button class=\"ds-secondary\">Copier</button>",
-      "css": ".ds-secondary{font:600 13px system-ui,sans-serif;min-height:40px;padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);cursor:pointer;transition:background .18s ease-out}.ds-secondary:hover:enabled{background:var(--soft)}.ds-secondary:focus-visible{outline:3px solid var(--accent);outline-offset:4px}.ds-secondary:disabled{opacity:.48;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-secondary{transition:none}}"
+      "description": "Back, photo review, or seven-field export.",
+      "html": "<button class=\"ds-secondary\">Exporter JSON</button>",
+      "css": ".ds-secondary{font:600 16px system-ui,sans-serif;min-height:46px;padding:10px 17px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);cursor:pointer;transition:background .18s ease-out;font-size:13px}.ds-secondary:hover:enabled{background:var(--soft)}.ds-secondary:focus-visible{outline:3px solid var(--accent);outline-offset:4px}.ds-secondary:disabled{opacity:.45;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-secondary{transition:none}}"
     },
     {
-      "name": "Language selector",
-      "kind": "input",
-      "refersTo": "language",
-      "description": "Tesseract language selection; disabled with opacity .6 for PaddleOCR, which uses its Latin model. Layout selection is also disabled for PaddleOCR.",
-      "html": "<label class=\"ds-language-label\">Langue du document <select class=\"ds-language\"><option>Français</option><option>Anglais</option><option>Français + Anglais</option></select></label>",
-      "css": ".ds-language-label{font:600 13px system-ui,sans-serif;color:var(--ink)}.ds-language{display:block;margin-top:9px;font:400 16px system-ui,sans-serif;min-height:46px;padding:8px 30px 8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}.ds-language:focus-visible{outline:3px solid var(--accent);outline-offset:4px}.ds-language:disabled{opacity:.6;cursor:not-allowed}"
+      "name": "Wizard progress",
+      "kind": "nav",
+      "description": "One active step, indicated semantically and visually.",
+      "html": "<nav aria-label=\"Progression\"><ol class=\"ds-steps\"><li aria-current=\"step\"><span>1</span> Recto</li><li><span>2</span> Verso</li><li><span>3</span> Résultats</li></ol></nav>",
+      "css": ".ds-steps{list-style:none;padding:0;margin:0 0 24px;display:flex;border-bottom:1px solid var(--line);font:14px system-ui,sans-serif}.ds-steps li{display:flex;align-items:center;gap:9px;flex:1;padding:0 0 18px;color:var(--muted)}.ds-steps li[aria-current]{color:var(--accent);font-weight:700;border-bottom:2px solid var(--accent)}.ds-steps span{width:25px;height:25px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;font-size:12px}.ds-steps li[aria-current] span{background:var(--accent);color:#fff;border-color:var(--accent)}@media(max-width:620px){.ds-steps li{font-size:12px;gap:7px}.ds-steps span{width:22px;height:22px}}"
     },
     {
-      "name": "Upload target",
+      "name": "Single step panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "The wizard shows only the current upload, loading or result panel.",
+      "html": "<section class=\"ds-panel\"><h2>Ajoutez le recto</h2><p>Photographiez la face qui porte le nom et le portrait, avec les quatre coins visibles.</p></section>",
+      "css": ".ds-panel{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:30px;font:16px system-ui,sans-serif}.ds-panel h2{font-size:23px;font-weight:650;margin:0;line-height:1.3}.ds-panel p{color:var(--muted);line-height:1.6;margin:12px 0 24px;max-width:70ch}@media(max-width:620px){.ds-panel{padding:20px}.ds-panel h2{font-size:21px}}"
+    },
+    {
+      "name": "Face upload",
       "kind": "custom",
       "refersTo": "upload",
-      "description": "Single-image file target; runtime supplies drag and preview behavior.",
-      "html": "<label class=\"ds-upload\"><input type=\"file\" accept=\"image/png,image/jpeg\"><strong>Choisir une image</strong><span>ou la déposer ici</span></label>",
-      "css": ".ds-upload{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:285px;border:1px dashed #a4b4a4;border-radius:8px;background:#f8f9f5;color:var(--muted);font:14px system-ui,sans-serif;cursor:pointer;transition:background .18s ease-out}.ds-upload strong{font-size:16px;color:var(--accent)}.ds-upload input{position:absolute;width:1px;height:1px;opacity:0}.ds-upload:hover{background:var(--soft);border-color:var(--accent)}.ds-upload:focus-within{outline:3px solid var(--accent);outline-offset:3px}@media(max-width:760px){.ds-upload{height:235px}}@media(prefers-reduced-motion:reduce){.ds-upload{transition:none}}"
+      "description": "One photo; runtime supplies automatic alignment and the 180-degree flip.",
+      "html": "<label class=\"ds-upload\"><input type=\"file\" accept=\"image/png,image/jpeg\"><strong>Choisir le recto</strong><span>ou déposer la photo ici</span></label>",
+      "css": ".ds-upload{height:315px;border:1px dashed #a4b4a4;border-radius:8px;background:#f8f9f5;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;position:relative;overflow:hidden;cursor:pointer;color:var(--muted);font:14px system-ui,sans-serif}.ds-upload strong{color:var(--accent);font-size:17px}.ds-upload input{position:absolute;opacity:0;width:1px;height:1px}.ds-upload:hover{background:var(--soft)}.ds-upload:focus-within{outline:3px solid var(--accent);outline-offset:4px}@media(max-width:620px){.ds-upload{height:235px}}"
     },
     {
-      "name": "Filtered summary",
-      "kind": "input",
-      "refersTo": "editor",
-      "description": "Read-only summary of filled retained fields; corrections happen in the seven inputs above.",
-      "html": "<details class=\"ds-retained-summary\"><summary>Résumé des champs retenus</summary><textarea class=\"ds-editor\" aria-label=\"Résumé des sept champs, sans autres informations\" readonly>Nom : MARTIN</textarea></details>",
-      "css": ".ds-retained-summary{margin-top:8px;color:var(--ink);font:13px system-ui,sans-serif}.ds-retained-summary summary{cursor:pointer;padding:8px 0}.ds-editor{display:block;width:100%;min-height:180px;resize:vertical;border:0;padding:0 4px;background:#fff;color:var(--ink);font:14px/1.8 system-ui,sans-serif;scrollbar-color:var(--line) #fff}.ds-retained-summary :focus-visible{outline:3px solid var(--accent);outline-offset:4px}.ds-editor:disabled{background:#fff;opacity:1}"
-    },
-    {
-      "name": "Paired workspace",
-      "kind": "card",
-      "refersTo": "workspace",
-      "description": "Source preparation beside the seven retained fields; panels stack on mobile.",
-      "html": "<div class=\"ds-workspace\"><section class=\"ds-source\"><h2>Votre image</h2></section><section class=\"ds-result\"><h2>Champs retenus</h2></section></div>",
-      "css": ".ds-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#fff;color:var(--ink);font-family:system-ui,sans-serif}.ds-source,.ds-result{min-width:0;padding:26px}.ds-source{border-right:1px solid var(--line)}.ds-workspace h2{margin:0;font-size:17px;font-weight:650}@media(max-width:760px){.ds-workspace{grid-template-columns:1fr}.ds-source,.ds-result{padding:20px}.ds-source{border-right:0;border-bottom:1px solid var(--line)}}"
-    },
-    {
-      "name": "Preparation coordinate fields",
-      "kind": "input",
-      "refersTo": "preparation-field",
-      "description": "Keyboard alternative to dragging the four numbered crop corners; each X/Y pair displays percentages.",
-      "html": "<div class=\"ds-coordinates\"><span>1. Haut gauche</span><div class=\"ds-coordinate-pair\"><label>X (%)<input type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" value=\"0\"></label><label>Y (%)<input type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" value=\"0\"></label></div></div>",
-      "css": ".ds-coordinates{font:12px system-ui,sans-serif;color:var(--ink)}.ds-coordinate-pair{display:flex;gap:6px;margin-top:4px}.ds-coordinate-pair label{min-width:0}.ds-coordinate-pair input{display:block;width:100%;min-height:40px;border:1px solid var(--line);border-radius:5px;padding:6px;font:inherit;background:#fff;color:var(--ink)}.ds-coordinate-pair input:focus-visible{outline:3px solid var(--accent);outline-offset:4px}"
-    },
-    {
-      "name": "Engine selector",
-      "kind": "input",
-      "refersTo": "engine",
-      "description": "Tesseract default with optional PaddleOCR and a muted behavior or missing-model hint. Runtime updates the hint and disables language/layout for PaddleOCR.",
-      "html": "<label class=\"ds-engine-label\">Moteur de reconnaissance<select class=\"ds-engine\" aria-describedby=\"ds-engine-help\"><option value=\"tesseract\">Tesseract — léger</option><option value=\"paddleocr\">PaddleOCR — optionnel</option></select></label><p id=\"ds-engine-help\" class=\"ds-engine-hint\">Tesseract utilise la langue et la disposition choisies ci-dessous.</p>",
-      "css": ".ds-engine-label{display:block;font:600 13px system-ui,sans-serif;color:var(--ink)}.ds-engine{display:block;width:100%;margin-top:9px;font:400 16px system-ui,sans-serif;min-height:46px;padding:8px 30px 8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}.ds-engine-hint{font:12px/1.6 system-ui,sans-serif;color:var(--muted);margin:12px 0 20px}.ds-engine:focus-visible{outline:3px solid var(--accent);outline-offset:4px}.ds-engine:disabled{opacity:.6;cursor:not-allowed}"
-    },
-    {
-      "name": "Retained field grid",
+      "name": "Retained field",
       "kind": "input",
       "refersTo": "retained-field",
-      "description": "Exactly seven editable field inputs in the product, with status and field-specific evidence. This isolated example shows one field.",
-      "html": "<div class=\"ds-field-grid\"><div class=\"ds-retained-field\"><label for=\"ds-field-nom\">Nom</label><input id=\"ds-field-nom\" type=\"text\" value=\"MARTIN\" maxlength=\"200\" autocomplete=\"off\" spellcheck=\"false\" aria-describedby=\"ds-note-nom\"><small id=\"ds-note-nom\">Proposition à vérifier. Libellé « NOM », valeur à droite.</small></div></div>",
-      "css": ".ds-field-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px 16px;color:var(--ink);font-family:system-ui,sans-serif}.ds-retained-field{min-width:0}.ds-retained-field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}.ds-retained-field input{display:block;width:100%;min-height:44px;border:1px solid var(--line);border-radius:7px;padding:10px;background:#fff;color:var(--ink);font:16px system-ui,sans-serif}.ds-retained-field small{display:block;font-size:11px;line-height:1.5;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}.ds-retained-field input:focus-visible{outline:3px solid var(--accent);outline-offset:4px}@media(max-width:760px){.ds-field-grid{grid-template-columns:1fr}}"
+      "description": "Seven such inputs carry editable values and review warnings. This isolated example shows one.",
+      "html": "<div class=\"ds-field\" data-state=\"a_verifier\"><label for=\"ds-nom\">Nom</label><input id=\"ds-nom\" type=\"text\" maxlength=\"200\" autocomplete=\"off\" spellcheck=\"false\" aria-describedby=\"ds-note\"><small id=\"ds-note\">Lecture incertaine : vérifiez cette zone sur la carte.</small></div>",
+      "css": ".ds-field{min-width:0;font:16px system-ui,sans-serif;color:var(--ink)}.ds-field label{display:block;font-size:13px;font-weight:650;margin-bottom:7px}.ds-field input{display:block;width:100%;min-height:46px;padding:10px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font:inherit}.ds-field small{display:block;margin-top:6px;font-size:12px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}.ds-field[data-state=\"a_verifier\"] small{color:var(--error)}.ds-field input:focus-visible{outline:3px solid var(--accent);outline-offset:4px}"
+    },
+    {
+      "name": "Preparation notice",
+      "kind": "custom",
+      "refersTo": "notice",
+      "description": "Photo collection remains available while required Paddle zone preparation is missing.",
+      "html": "<p class=\"ds-notice\">PaddleOCR doit être préparé avant la lecture. Vous pouvez déjà ajouter les photos.</p>",
+      "css": ".ds-notice{padding:13px 16px;background:var(--soft);border-radius:7px;font:13px/1.6 system-ui,sans-serif;color:var(--accent);margin:0 0 18px}"
     }
   ],
   "narrative": {
     "northStar": "Paper and forest-green workbench",
-    "overview": "The existing paper and forest-green workbench now pairs source preparation with exactly seven editable retained fields. A serif introduction and system controls preserve the visual identity; a read-only filtered summary and field-specific notes support review without exposing full OCR text.",
+    "overview": "The existing visual identity now supports a sequential Recto, Verso, Results wizard. Paper, white panels, a serif introduction and system controls remain. One active panel guides capture, orientation confirmation and review of seven editable values.",
     "keyCharacteristics": [
-      "Paired source/result panels",
+      "Single active step",
       "Restrained borders",
       "Local fonts",
-      "Direct French instructions"
+      "Explicit coverage limits"
     ],
     "rules": [
       {
@@ -194,16 +162,15 @@
       }
     ],
     "dos": [
-      "Do keep extraction primary and copy/export secondary.",
-      "Do preserve visible keyboard focus, clear disabled states and readable French instructions.",
-      "Do keep source and result adjacent on desktop and sequential on mobile.",
-      "Do preserve keyboard coordinate editing, field-specific evidence and corrections after failed reruns.",
-      "Do keep optional-engine availability and errors explicit, preserving prior text on failure.",
-      "Do keep the result surface and normal exports restricted to the seven fields; raw OCR belongs only to explicit technical compatibility mode."
+      "Do show one wizard panel and one active progress step at a time.",
+      "Do preserve keyboard focus, clear busy/disabled states and explicit preparation errors.",
+      "Do keep photo review, field correction and seven-field exports easy to reach.",
+      "Do state that the profile is provisional and the verso is captured without automatic reading."
     ],
     "donts": [
-      "Don't introduce external font requests or decorative shadows into this local, flat interface.",
-      "Don't hide editing, copy or export behind an extra screen."
+      "Don’t reintroduce technical settings, free-form OCR output or zone-append controls into this wizard.",
+      "Don’t imply automatic card classification, identity verification, trained CNI weights or validated real Paddle accuracy.",
+      "Don’t introduce external fonts or decorative shadows."
     ]
   }
 }

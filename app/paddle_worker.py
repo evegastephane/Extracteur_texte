@@ -28,6 +28,23 @@ def main():
     os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = "True"
     os.environ["PADDLE_PDX_CACHE_HOME"] = str(output.parent / "paddlex-cache")
     os.environ["OMP_NUM_THREADS"] = "2"
+    if len(sys.argv) == 5:
+        job_file = Path(sys.argv[4])
+        from paddleocr import TextRecognition
+        jobs = json.loads(job_file.read_text(encoding="utf-8"))
+        recognizer = TextRecognition(model_name="latin_PP-OCRv5_mobile_rec", model_dir=str(models / "rec"),
+                                     device="cpu", cpu_threads=2, enable_mkldnn=False)
+        zones = {}
+        # Single model instance; retain explicit per-zone association instead of
+        # relying on an undocumented batching/sorting order.
+        for job in jobs:
+            results = recognizer.predict(input=job["path"], batch_size=1)
+            if len(results) != 1:
+                raise ValueError("Unexpected zone recognition output")
+            zones[job["field"]] = {"text": str(results[0]["rec_text"]).strip(), "score": float(results[0]["rec_score"])}
+        recognizer.close()
+        output.write_text(json.dumps({"zones": zones}, ensure_ascii=False), encoding="utf-8")
+        return
     from paddleocr import PaddleOCR
 
     pipeline = PaddleOCR(

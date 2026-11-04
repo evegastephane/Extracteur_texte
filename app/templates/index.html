@@ -3,57 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Repérez sept champs d’un document par libellés et règles, directement sur votre ordinateur.">
-  <title>Extracteur — Champs par libellés</title>
+  <meta name="description" content="Ajoutez le recto et le verso de votre CNI, puis vérifiez les sept champs lus dans les zones prédéfinies.">
+  <title>Extracteur — CNI camerounaise</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </head>
 <body>
-  <header class="topbar"><a href="/" class="brand" aria-label="Extracteur, accueil"><span class="brand-mark" aria-hidden="true">[t]</span> Extracteur</a><span class="local-note"><span aria-hidden="true" class="dot"></span> Sur votre ordinateur</span></header>
+  <header class="topbar"><a href="/" class="brand"><span class="brand-mark" aria-hidden="true">[t]</span> Extracteur CNI</a><span class="local-note">Traitement local</span></header>
   <main>
-    <div class="intro"><h1>De l’image aux champs.</h1><p>Repérez les sept informations utiles par leurs libellés. Le reste est écarté.</p></div>
-    <div class="workspace">
-      <section class="source" aria-labelledby="source-title">
-        <div class="section-heading"><h2 id="source-title">Votre image</h2><span>PNG ou JPEG · 10 Mio max.</span></div>
-        <label class="dropzone" id="dropzone" for="image">
-          <input id="image" type="file" accept="image/png,image/jpeg" aria-describedby="image-help">
-          <span class="upload-content" id="upload-content"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="5" y="5" width="30" height="30" rx="4" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="14" r="3" stroke="currentColor" stroke-width="1.5"/><path d="m6 29 9-9 7 7 5-5 8 8" stroke="currentColor" stroke-width="1.5"/></svg><strong>Choisir une image</strong><span>ou la déposer ici</span></span>
-          <img id="preview" alt="Aperçu de l’image sélectionnée" hidden>
-          <canvas id="selection-canvas" hidden aria-label="Sélection du document. Les coordonnées sont aussi réglables ci-dessous."></canvas>
-          <span class="change-image" id="change-image" hidden>Changer d’image</span>
-        </label>
-        <p id="image-help" class="file-info">Une image à la fois, jusqu’à 20 millions de pixels.</p>
-        <form id="ocr-form">
-          <label for="engine">Moteur de reconnaissance</label>
-          <select id="engine"><option value="tesseract">Tesseract — léger</option><option value="paddleocr">PaddleOCR — optionnel</option></select>
-          <p id="engine-help" class="hint">Tesseract utilise la langue et la disposition choisies ci-dessous.</p>
-          <fieldset id="adjustments" disabled>
-            <legend>Préparer l’image</legend>
-            <div class="tools"><button type="button" id="rotate">Tourner de 90°</button><button type="button" id="reset-selection">Image entière</button><span id="rotation-label">0°</span></div>
-            <label class="check"><input type="checkbox" id="crop-enabled"> Recadrer et redresser le document</label>
-            <div id="crop-tools" hidden>
-              <p class="hint">Placez les coins dans l’ordre : haut gauche, haut droit, bas droit, bas gauche. Vous pouvez ensuite déplacer les poignées.</p>
-              <button type="button" id="place-corners">Placer les quatre coins sur l’image</button>
-              <details><summary>Régler les coins au clavier</summary><div id="corner-inputs" class="corner-inputs"></div></details>
-            </div>
-            <div class="settings-grid"><label>Amélioration<select id="processing"><option value="original">Original — sans filtre</option><option value="contrast">Photo — contraste et bruit</option><option value="threshold">Noir et blanc adaptatif</option></select></label><label>Disposition du texte<select id="layout"><option value="auto">Automatique</option><option value="sparse">Texte dispersé / carte</option><option value="block">Bloc de texte</option><option value="line">Une seule ligne</option></select></label></div>
-            <label class="check"><input type="checkbox" id="deskew"> Corriger la légère inclinaison (±12°)</label>
-          </fieldset>
-          <label for="language">Langue du document</label>
-          <div class="extract-controls"><select id="language" name="language"><option value="fra">Français</option><option value="eng">Anglais</option><option value="fra+eng">Français + Anglais</option></select><button id="extract" class="primary" type="submit" disabled>Repérer les champs <span aria-hidden="true">→</span></button></div>
-        </form>
-      </section>
-      <section class="result" aria-labelledby="result-title" aria-busy="false">
-        <div class="section-heading"><h2 id="result-title">Champs retenus</h2><span id="count">En attente d’une image</span></div>
-        <p class="hint" id="field-intro">Seuls le nom, les prénoms, la date et le lieu de naissance, le sexe, la taille et la profession sont conservés. Les autres informations sont écartées.</p>
-        <fieldset id="fields" hidden disabled><legend class="sr-only">Valeurs proposées, modifiables</legend><p class="hint">Repérage par libellés et positions, sans entraînement. Relisez chaque proposition. Un champ vide peut être renseigné manuellement.</p><div id="field-list"></div></fieldset>
-        <details class="retained-summary"><summary>Résumé des champs retenus</summary><div class="editor-wrap"><label class="sr-only" for="text">Résumé des sept champs, sans autres informations</label><textarea id="text" placeholder="Les champs renseignés apparaîtront ici." readonly disabled></textarea></div></details>
-        <div class="result-actions"><span class="edit-note">Corrigez les champs, puis récupérez le résultat.</span><button id="copy" type="button" disabled>Copier</button><button id="download" type="button" disabled>Exporter .txt</button><button id="download-json" type="button" disabled>Exporter .json</button></div>
-      </section>
-    </div>
-    <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Choisissez une image pour commencer.</p>
-    <footer><p>Vos documents restent ici. Aucun envoi à un service externe.</p><span>OCR local · Tesseract / PaddleOCR · Open source</span></footer>
+    <div class="intro"><h1>Votre carte, étape par étape.</h1><p>Ajoutez le recto, puis le verso. Vérifiez les informations retenues.</p></div>
+    <nav aria-label="Progression"><ol class="steps"><li id="step-1" aria-current="step"><span>1</span> Recto</li><li id="step-2"><span>2</span> Verso</li><li id="step-3"><span>3</span> Résultats</li></ol></nav>
+    <p id="engine-warning" class="notice" hidden>PaddleOCR doit être préparé avant la lecture. Vous pouvez déjà ajouter les photos.</p>
+    <section id="upload-step" class="panel" aria-labelledby="upload-title">
+      <div class="panel-heading"><h2 id="upload-title" tabindex="-1">Ajoutez le recto</h2><span id="side-count">Photo 1 sur 2</span></div>
+      <p id="upload-instruction">Photographiez la face qui porte le nom et le portrait, avec les quatre coins visibles.</p>
+      <label class="dropzone" id="dropzone" for="image">
+        <input id="image" type="file" accept="image/png,image/jpeg" aria-describedby="file-help">
+        <span id="empty-upload"><svg width="44" height="36" viewBox="0 0 44 36" fill="none" aria-hidden="true"><rect x="2" y="4" width="40" height="28" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M10 22h11M10 26h7M10 12h13" stroke="currentColor" stroke-width="1.5"/><rect x="28" y="12" width="8" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/></svg><strong id="choose-label">Choisir le recto</strong><span>ou déposer la photo ici</span></span>
+        <img id="preview" alt="Aperçu de la face de la carte, recadrée automatiquement" hidden>
+      </label>
+      <p id="file-help" class="hint">PNG ou JPEG · 10 Mio maximum par photo. Posez la carte sur un fond uni.</p>
+      <div id="photo-tools" hidden><button id="change-photo" type="button">Changer la photo</button><button id="flip-photo" type="button">Retourner l’image</button><span class="hint">Le texte doit être à l’endroit.</span></div>
+      <p id="back-notice" class="hint" hidden>Le verso sera disponible pour votre relecture. Les sept champs sont lus sur le recto ; aucune zone du verso n’est encore configurée.</p>
+      <div class="navigation"><button id="back" type="button" hidden>Retour</button><button id="return-results" type="button" hidden>Revenir aux résultats</button><button id="next" class="primary" type="button" disabled>Suivant <span aria-hidden="true">→</span></button></div>
+    </section>
+    <section id="loading-step" class="panel loading" aria-labelledby="loading-title" hidden aria-busy="true"><div class="spinner" aria-hidden="true"></div><h2 id="loading-title" tabindex="-1">Lecture des zones en cours</h2><p>Les sept champs du recto sont lus avec PaddleOCR. Gardez cette page ouverte.</p></section>
+    <section id="result-step" class="panel" aria-labelledby="result-title" hidden>
+      <div class="panel-heading"><h2 id="result-title" tabindex="-1">Vérifiez les informations</h2><span id="count"></span></div>
+      <p>Relisez chaque valeur sur la carte. Vous pouvez corriger ou compléter les champs.</p>
+      <p class="hint">Gabarit provisoire du recto illustré. Les autres modèles ne sont pas encore identifiés automatiquement.</p>
+      <details class="photos"><summary>Revoir le recto et le verso</summary><div class="photo-pair"><figure><img id="result-front" alt="Recto fourni"><figcaption>Recto</figcaption></figure><figure><img id="result-back" alt="Verso fourni"><figcaption>Verso — sans lecture automatique</figcaption></figure></div></details>
+      <fieldset id="fields"><legend class="sr-only">Les sept champs retenus</legend><div id="field-list"></div></fieldset>
+      <div class="result-actions"><button id="copy" type="button">Copier les champs</button><button id="download-json" type="button">Exporter JSON</button><button id="download" type="button">Exporter TXT</button></div>
+      <div class="navigation"><button id="review-photos" type="button">Modifier les photos</button><button id="restart" type="button" class="primary">Nouvelle carte</button></div>
+    </section>
+    <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Commencez par la photo du recto.</p>
+    <details class="scope"><summary>Cartes prises en charge</summary><p>Cette version applique des zones fixes au recto de la carte à puce illustrée. La classification ancien/nouveau modèle est différée. Le verso est recueilli pour relecture, mais ses zones ne sont pas encore définies. Une lecture erronée reste possible : vérifiez les valeurs proposées.</p></details>
+    <footer>Vos photos restent dans votre session. Aucun document envoyé à un service externe.</footer>
   </main>
 </body>
 </html>

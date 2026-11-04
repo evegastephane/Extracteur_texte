@@ -1,6 +1,6 @@
 ---
-name: Extracteur
-description: A local seven-field extraction workbench in paper and forest green.
+name: Extracteur CNI
+description: A local recto-verso wizard in paper and forest green.
 colors:
   paper: "#f6f5f0"
   ink: "#202c28"
@@ -13,36 +13,37 @@ colors:
   accent-hover: "#1b4937"
   upload-surface: "#f8f9f5"
   upload-line: "#a4b4a4"
-  selection-surface: "#eef1eb"
 typography:
   display:
     fontFamily: 'Georgia, "Times New Roman", serif'
-    fontSize: "clamp(36px, 4.2vw, 58px)"
+    fontSize: "clamp(32px, 4vw, 48px)"
     fontWeight: 400
-    lineHeight: 1.12
+    lineHeight: 1.15
     letterSpacing: "-.035em"
   body:
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
     fontSize: "16px"
   title:
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    fontSize: "17px"
+    fontSize: "23px"
     fontWeight: 650
+    lineHeight: 1.3
   label:
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
     fontSize: "13px"
-    fontWeight: 600
+    fontWeight: 650
 rounded:
-  workspace: "12px"
+  panel: "12px"
   upload: "8px"
   control: "7px"
-  field: "5px"
+  photo: "6px"
 spacing:
   compact: "8px"
-  control-gap: "10px"
   small: "12px"
+  medium: "16px"
   mobile: "20px"
-  panel: "26px"
+  section: "24px"
+  panel: "30px"
   desktop: "40px"
 components:
   button-primary:
@@ -50,110 +51,91 @@ components:
     textColor: "{colors.white}"
     rounded: "{rounded.control}"
     padding: "10px 17px"
+    height: "46px"
   button-primary-hover:
     backgroundColor: "{colors.accent-hover}"
   button-secondary:
     backgroundColor: "{colors.white}"
     textColor: "{colors.ink}"
     rounded: "{rounded.control}"
-    padding: "8px 12px"
-  workspace:
+    padding: "10px 17px"
+  panel:
     backgroundColor: "{colors.white}"
-    rounded: "{rounded.workspace}"
+    rounded: "{rounded.panel}"
+    padding: "30px"
   upload:
     backgroundColor: "{colors.upload-surface}"
     textColor: "{colors.accent}"
     rounded: "{rounded.upload}"
-  language:
-    backgroundColor: "{colors.white}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.control}"
-    padding: "8px 30px 8px 12px"
-  engine:
-    backgroundColor: "{colors.white}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.control}"
-    padding: "8px 30px 8px 12px"
-    width: "100%"
-  preparation-field:
-    backgroundColor: "{colors.white}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.field}"
-    height: "40px"
+    height: "315px"
   retained-field:
     backgroundColor: "{colors.white}"
     textColor: "{colors.ink}"
     rounded: "{rounded.control}"
-    padding: "10px"
-    height: "44px"
-  editor:
-    backgroundColor: "{colors.white}"
-    textColor: "{colors.ink}"
-    padding: "0 4px"
+    padding: "10px 12px"
+    height: "46px"
+  notice:
+    backgroundColor: "{colors.soft}"
+    textColor: "{colors.accent}"
+    rounded: "{rounded.control}"
+    padding: "13px 16px"
 ---
 
-# Design System: Extracteur
+# Design System: Extracteur CNI
 
 ## Overview
 
-**Creative North Star: "Paper and forest-green workbench"** — a description of the implemented interface, not a separately established user preference.
+**Creative North Star: "Paper and forest-green workbench"** — the existing visual identity now supports a sequential wizard. Paper, white panels, a serif introduction and system controls remain the incumbent language.
 
-The quiet paper background frames a white work surface. A serif introduction gives the page character; system typography keeps the image controls and seven editable fields familiar. The image and retained fields form a single working area, with forest green identifying the recognition action and interactive cues. The main heading is “De l’image aux champs.”
+The heading “Votre carte, étape par étape.” introduces Recto, Verso and Résultats. One panel is visible at a time, including a dedicated reading state. Direct French instructions guide photo confirmation and review of seven editable values.
 
-**Key characteristics:** paired source/result panels, restrained borders, local fonts, direct French instructions.
+**Key characteristics:** single active step, restrained borders, local fonts, explicit coverage limits.
 
 ## Colors
 
 ### Primary
 
-Forest green (`accent`) identifies extraction, upload cues, the local indicator and focus. `accent-hover` deepens the primary button; `soft` marks gentle hover and drag states. `error` is reserved for status errors.
+Forest green (`accent`) identifies progression, primary actions and focus. `accent-hover` deepens hover; `soft` supports upload hover and preparation notices. `error` marks failures and field warnings.
 
 ### Neutral
 
-`paper` surrounds the white workspace. `ink` carries readable text, `muted` supports instructions and metadata, and `line` separates regions. `upload-surface` and `upload-line` distinguish the empty image target. `selection-surface` supports the oriented canvas; green outlines, translucent fill and numbered handles show the selected quadrilateral.
+`paper` surrounds white panels. `ink` carries text, `muted` explains state and limits, and `line` separates steps/actions. The empty upload target retains `upload-surface` and a dashed `upload-line` border.
 
 ## Typography
 
-The display serif appears in the main heading; the bracketed brand mark also uses Georgia. System sans-serif serves controls, prose and extracted text without external font requests. Section titles use the title token; form labels use the label token. Introductory prose is slightly larger (17px, line height 1.6, maximum 70ch); mobile reduces it to 15px. The read-only summary uses 14px text with generous line height (1.8); retained-field labels are 13px and evidence/status notes are 11px.
+Georgia supplies the main heading and bracketed brand mark. System sans-serif serves all instructions, navigation and fields without external font requests. Panel titles use the title token, reducing to 21px on mobile. Field labels use the label token; notes use 12px with line height 1.5. Explanatory paragraphs use line height 1.6 and a maximum 70ch where applied.
 
 ## Layout
 
-The header and main area share a centered maximum width (1280px), with desktop horizontal padding from `desktop`. The workspace grid pairs source and result in a 1:1.12 ratio, separated by a border; panel padding uses `panel`.
+The header is centered within 1120px; main content within 920px, with desktop horizontal padding from `desktop`. A three-part progress row precedes one white panel. The source/results split layout is replaced by Recto → Verso → Résultats. The panel uses `panel` padding, a contained photo target, wrapping photo tools and a divided navigation row; “Suivant” aligns right with minimum width 140px.
 
-At widths up to 760px, panels stack source first, padding uses `mobile`, the divider becomes horizontal, and the language/action row stacks. The empty upload area reduces from 285px to 235px; once preparation is enabled it is 340px, reducing to 260px up to 420px. The retained fields use a two-column grid with gaps of 18px vertically and 16px horizontally, becoming one column up to 760px. The summary has a minimum height of 180px. Result actions wrap; the footer stacks. Preparation settings use two columns, stacking up to 420px; corner-coordinate groups use two columns. Optional keyboard coordinates use a native disclosure below the image tools; the read-only filtered summary has its own disclosure beneath the seven fields.
+Results use a two-column field grid (22px vertical and 20px horizontal gaps). An optional photo-review disclosure shows both faces side by side, explicitly labeling the verso as not read automatically. At widths up to 620px, main/panel padding uses `mobile`, fields and photo review stack, the upload target reduces from 315px to 235px and navigation wraps.
 
 ## Elevation & Depth
 
-There are no shadows. White, paper and softly tinted upload surfaces establish depth through tone and thin borders. Focus is a visible green outline (3px, offset 4px); the upload target uses a 3px offset.
+There are no shadows. White, paper, thin borders and soft notices supply depth. Focus remains a green outline (3px, offset 4px), including within the upload label. State transitions use .18s ease-out; the loading spinner uses .8s linear rotation. Reduced motion removes animation and transitions.
 
 ## Shapes
 
-Use the workspace radius for the outer shared surface, upload radius for the image target and control radius for buttons and select. The image target has a dashed border; the workspace and controls have solid thin borders. Preview images remain contained within their target.
+The main panel retains the broad panel radius, upload targets the upload radius, and inputs/buttons the control radius. Photos in the review disclosure use the photo radius. Numbered progress markers are circular; the active marker is green with white text.
 
 ## Components
 
-- **Extraction button:** “Repérer les champs”, forest green with white text; minimum height 46px. Disabled controls have opacity .48 and a disallowed cursor.
-- **Result buttons:** compact outlined white copy/TXT/JSON controls; minimum height 40px, 13px text, soft hover fill. Outputs are restricted to the seven retained field keys.
-- **Engine selector:** a full-width native select above preparation, using existing control tokens. Tesseract is the default; PaddleOCR is labeled optional. A muted hint explains language/layout behavior or missing installation/models, without suggesting validated accuracy or readiness. The control is disabled while extraction runs.
-- **Language selector:** a native select with the three implemented French/English choices. PaddleOCR disables it and the layout select because its Latin model and automatic segmentation apply. Disabled selects use opacity .6 and a disallowed cursor; geometry and filter controls remain shared.
-- **Upload target:** an accessible file label with centered instructions, hover/drag tint and image preview. Keyboard focus outlines the target.
-- **Image preparation:** native selects and green-accent checkboxes extend the existing control language. Compact rotation/reset buttons precede the orientation canvas. Four numbered green handles are draggable; percentage X/Y fields offer keyboard editing in clockwise order. Rotation resets the selection. The canvas previews geometry, not tonal filters.
-- **Preparation fields:** thin outlined inputs use the field radius; coordinate fields have minimum height 40px. Photo/Original/adaptive threshold, optional ±12° deskew and auto/block/sparse/line layout remain explicitly selectable.
-- **Retained fields:** exactly seven labeled editable inputs with control radius, white fill, thin border and minimum height 44px. Muted notes beneath each input explain proposed/missing/ambiguous values and field-specific evidence; manual edits are identified. Never present an invented confidence percentage.
-- **Filtered summary:** a borderless, vertically resizable read-only textarea in a native disclosure. It reflects only filled retained fields; users edit the fields above. Successful extraction replaces all seven propositions; failure preserves corrections. Free-form zone append controls are absent.
-- **Status:** a reserved message area below the workspace, with a spinning busy indicator and error color when needed. Status updates are announced politely.
-
-Button and upload color transitions use .18s ease-out; the busy indicator rotates over .8s. Reduced-motion preference removes transitions and animation.
+- **Progress navigation:** three equal steps with numbered markers; `aria-current="step"` adds green text, a stronger bottom border and filled marker. Current headings receive focus during navigation.
+- **Photo panel:** one PNG/JPEG face at a time. A dashed upload label accepts click/drop; automatic alignment produces a contained image preview. Compact secondary controls change the photo or flip it by 180°. There are no engine/filter/language/corner settings.
+- **Navigation:** primary “Suivant” and “Nouvelle carte”, secondary back/review actions. Buttons have minimum height 46px; compact photo tools use 40px. Disabled buttons use opacity .45. Busy states disable photo/navigation actions.
+- **Loading panel:** centered spinner and plain reading instructions, with busy semantics. The preparation notice allows photo collection while clearly explaining that Paddle must be prepared for reading.
+- **Seven fields:** white, outlined editable inputs with minimum height 46px. Muted notes distinguish proposed, missing and manually edited values; uncertain-field notes use error color. No artificial accuracy percentage appears.
+- **Results:** copy/TXT/JSON are limited to seven fields. A native photo disclosure and support-scope disclosure expose coverage honestly; verso capture is never described as verso OCR. Unchanged-photo review preserves edits and reuses the result without OCR. Photo changes invalidate it; a new recto also clears the old verso.
 
 ## Do's and Don'ts
 
-- **Do** keep extraction visually primary and copy/export secondary.
-- **Do** preserve visible keyboard focus, clear disabled states and readable French instructions.
-- **Do** keep source and result adjacent on desktop and sequential on mobile.
-- **Do** preserve keyboard coordinate editing, field-specific evidence and corrections after failed reruns.
-- **Do** keep the result surface and normal exports restricted to the seven fields; raw OCR belongs only to the explicit technical compatibility mode.
-- **Do** keep optional-engine availability and errors explicit, preserving prior text on failure.
-- **Don't** introduce external font requests or decorative shadows into this local, flat interface.
-- **Don't** hide editing, copy or export behind an extra screen.
+- **Do** show one wizard panel and one active progress step at a time.
+- **Do** preserve keyboard focus, clear busy/disabled states and explicit preparation errors.
+- **Do** keep photo review, field correction and the seven-field exports easy to reach.
+- **Do** state that the profile is provisional and the verso is captured without automatic reading.
+- **Don't** reintroduce technical settings, free-form OCR output or zone-append controls into this wizard.
+- **Don't** imply automatic card classification, identity verification, trained CNI weights or validated real Paddle accuracy.
+- **Don't** introduce external fonts or decorative shadows.
 
-Source of truth: [app/static/style.css](app/static/style.css) and [app/templates/index.html](app/templates/index.html). Scope and limitations: [PRODUCT.md](PRODUCT.md).
+Source: [stylesheet](app/static/style.css), [template](app/templates/index.html) and [wizard behavior](app/static/app.js). Product scope: [PRODUCT.md](PRODUCT.md).

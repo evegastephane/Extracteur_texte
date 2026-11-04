@@ -1,19 +1,20 @@
 # Documentation — Extracteur de texte
 
-Version : 0.1 — 3 novembre 2026. Statut : proposition initiale pour le MVP.
+État courant : parcours CNI recto → verso → résultats, lecture par zones fixes du recto avec PaddleOCR. Les documents BRS/PRD/SRS/SAD conservent le cadrage initial et ses évolutions.
 
-Le produit lit une image et en extrait du texte grâce à un moteur OCR open source exécuté localement. Aucun service d’IA générative, compte utilisateur ou abonnement n’est nécessaire.
+Le moteur principal est PaddleOCR local, sans service d’IA externe. Le gabarit du recto fourni est provisoire ; classification ancien/nouveau et zones du verso sont différées.
 
 | Document | Rôle |
 | --- | --- |
+| [Zones CNI](CNI_ZONES.md) | Parcours actuel, alignement, sept zones, validation et limites |
 | [BRS](BRS.md) | Besoin métier, valeur et limites |
 | [PRD](PRD.md) | Produit, parcours utilisateur et périmètre du MVP |
 | [SRS](SRS.md) | Exigences fonctionnelles et critères vérifiables |
 | [SAD](SAD.md) | Architecture et choix techniques proposés |
-| [Précision OCR](ACCURACY.md) | Recadrage, perspective, filtres, zones et mesure des gains |
-| [PaddleOCR](PADDLEOCR.md) | Moteur optionnel, installation Windows/Linux et limites de validation |
-| [Champs par libellés](FIELDS.md) | Sept champs autorisés, règles spatiales, correction et exports filtrés |
+| [Précision OCR](ACCURACY.md) | Ancien moteur réglable et benchmark OCR technique |
+| [PaddleOCR](PADDLEOCR.md) | Installation Windows/Linux et limites de validation |
+| [Champs par libellés](FIELDS.md) | Moteur historique, conservé seulement dans l’ancienne API |
 
-Périmètre : une petite application web utilisée sur une machine locale, pour une image à la fois. Le MVP est désormais implémenté ; voir le [guide d’installation](../README.md). Les documents ci-dessous conservent le cadrage initial. Les objectifs complets de performance et précision du SRS restent à mesurer.
+Le parcours actuel est décrit dans [Zones CNI](CNI_ZONES.md) et le [guide d’installation](../README.md). Les objectifs de précision sur des photos réelles restent à mesurer ; les essais synthétiques ne les établissent pas.
 
-Par « sans IA », on entend ici sans modèle génératif, API d’IA ou modèle téléchargé à la demande. Tesseract est un moteur OCR spécialisé dont les versions modernes utilisent des réseaux neuronaux pour reconnaître les caractères. Ses données de reconnaissance françaises et anglaises sont installées avec l’application.
+PaddleOCR emploie un modèle neuronal spécialisé préexistant, téléchargé lors de la préparation. Aucun nouveau modèle n’est entraîné ici et aucun modèle n’est téléchargé pendant la lecture.

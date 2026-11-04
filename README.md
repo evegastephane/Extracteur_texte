@@ -1,86 +1,88 @@
-# Extracteur de texte
+# Extracteur CNI camerounaise
 
-Une application locale pour repérer **sept champs par libellés et règles** dans une image PNG/JPEG : nom, prénoms, date et lieu de naissance, sexe, taille et profession. Les autres informations sont écartées du résultat. Interface en français, champs modifiables, copie et exports TXT/JSON. Sans entraînement de modèle d’extraction ni API d’IA externe.
+Une application locale avec un parcours simple : **recto → verso → résultats**. PaddleOCR lit les valeurs dans sept zones prédéfinies après alignement de la carte. Aucun réglage de moteur, filtre, langue ou coordonnées n’est demandé dans l’interface.
 
-## Installation
+Les seules informations retenues sont : nom, prénoms, date et lieu de naissance, sexe, taille et profession. Les propositions restent modifiables et exportables en TXT/JSON.
 
-### Windows (PowerShell)
+**Périmètre actuel :** un gabarit provisoire du recto à puce illustré par l’utilisateur. La classification ancien/nouveau est différée. Aucun gabarit du second modèle ni du verso n’a été inventé : le verso est recueilli et affichable, mais n’est pas lu automatiquement. Voir [les zones et limites](docs/CNI_ZONES.md).
 
-Installer Python 3.12 et [Tesseract 5 pour Windows](https://github.com/UB-Mannheim/tesseract/wiki). Depuis le dossier du projet, lancer `./scripts/setup.ps1` si l’exécution des scripts PowerShell est autorisée, puis :
+## Mettre à jour sur Windows
 
-```powershell
-.\.venv\Scripts\python.exe -m app
-```
-
-Le script installe les dépendances et les données françaises/anglaises avec vérification SHA-256. Il ne modifie pas la politique d’exécution PowerShell. L’application détecte Tesseract dans le PATH ou dans le dossier standard `Program Files\Tesseract-OCR`. Pour une installation personnalisée, ajouter son dossier au PATH.
-
-Pour mettre à jour une installation existante avec `.ocr-data` déjà préparé :
+Arrêter le serveur avec Ctrl+C, puis, depuis PowerShell dans le projet :
 
 ```powershell
 git pull origin main
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv-paddle\Scripts\python.exe -m pip install -r requirements-paddle.txt
+.\.venv-paddle\Scripts\python.exe scripts/setup_paddle.py
 .\.venv\Scripts\python.exe -m app
 ```
 
-Le script Windows est fourni, mais n’a pas été exécuté sous Windows dans cet environnement Linux. Les dépendances choisies disposent de distributions pour Python 3.12 sous Windows ; la validation native reste à effectuer.
+Le script reteste les modèles existants, y compris la reconnaissance directe des sept zones. Il ne les télécharge à nouveau que si le dossier n’existe pas. Le marqueur `zone_smoke_test` n’est activé qu’après réussite du test réel. Actualiser le navigateur avec Ctrl+F5.
 
-### Linux
+Si `.venv-paddle` n’existe pas, le créer d’abord :
 
-Cible testée : Linux, Python 3.12, Tesseract 5. Prérequis : Python avec `venv`, Tesseract, `curl` et `sha256sum`. Sur Debian/Ubuntu, si nécessaire :
-
-```sh
-sudo apt-get update
-sudo apt-get install python3-venv tesseract-ocr curl
+```powershell
+py -3.12 -m venv .venv-paddle
 ```
 
-Dans le dossier du projet :
+La validation native Windows reste à effectuer dans cet environnement de développement Linux. Prérequis cible : Python 3.12 x64, Windows x64 et runtime Visual C++ compatible avec PaddlePaddle. Aucun GPU ni clé API requis.
 
-```sh
-bash scripts/setup.sh
-.venv/bin/python -m app
+## Nouvelle installation
+
+Sous Windows, avec Python 3.12 installé :
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+py -3.12 -m venv .venv-paddle
+.\.venv-paddle\Scripts\python.exe -m pip install -r requirements-paddle.txt
+.\.venv-paddle\Scripts\python.exe scripts/setup_paddle.py
+.\.venv\Scripts\python.exe -m app
 ```
 
-Ouvrez l’adresse locale affichée dans le terminal, sur le port 8000. Le serveur écoute uniquement sur `127.0.0.1` et ne doit pas être exposé sur Internet. Arrêt avec Ctrl+C.
+Sous Linux, utiliser `python3 -m venv` et les exécutables `.venv/bin/python` et `.venv-paddle/bin/python` avec les mêmes commandes pip et script. Paddle reste isolé pour éviter les conflits OpenCV/PaddleX avec l’application Flask.
 
-Le script installe les dépendances Python et télécharge les données officielles Tesseract `tessdata_fast`, versionnées et contrôlées par SHA-256, dans `.ocr-data/` (ignoré par Git). Il peut être relancé. Les données OCR sont conservées entre les lancements ; aucun téléchargement n’est effectué pendant l’extraction. Une variable `TESSDATA_PREFIX` déjà définie est respectée : elle doit alors désigner des données compatibles contenant `fra` et `eng`.
+Ouvrir l’adresse locale affichée dans le terminal sur le port 8000. Le serveur écoute uniquement sur `127.0.0.1`. Il ne doit pas être exposé publiquement. L’interface peut démarrer sans modèles, mais affiche alors un avertissement et refuse clairement la lecture. Tesseract n’est plus requis pour le parcours CNI ; il reste utilisé par les anciens outils et certains tests.
 
 ## Utilisation
 
-1. Choisir ou déposer une image PNG/JPEG, jusqu’à 10 Mio et 20 millions de pixels.
-2. Choisir le moteur et les réglages, conserver les libellés dans le recadrage et lancer **Repérer les champs**.
-3. Relire les sept propositions, corriger ou compléter les champs, puis copier ou exporter le résultat filtré en TXT/JSON. Les champs absents restent vides et les ambiguïtés sont signalées.
+1. **Recto :** choisir ou déposer une photo PNG/JPEG (10 Mio et 20 millions de pixels maximum). Le programme cherche les contours et redresse la carte. Vérifier les quatre bords et le sens du texte ; « Retourner l’image » corrige un sens inversé. Cliquer sur **Suivant**.
+2. **Verso :** ajouter l’autre face de la même carte, vérifier l’aperçu, puis **Suivant**. Un doublon strict des deux photos est refusé. Le verso est seulement recueilli pour relecture dans cette version.
+3. **Résultats :** relire et corriger les sept valeurs, puis copier ou exporter. Une lecture incertaine ou un format suspect est signalé. Revoir les photos sans les changer conserve les corrections et ne relance pas l’OCR.
 
-Les outils permettent de tourner l’image, sélectionner quatre coins pour recadrer et redresser, améliorer le contraste, réduire le bruit, appliquer un seuillage adaptatif et corriger une légère inclinaison. Les modes automatique, bloc, texte dispersé et ligne permettent d’adapter Tesseract au document. Le [guide des champs et règles](docs/FIELDS.md) décrit les libellés, la recherche à droite/en dessous et les limites. Voir aussi le [guide de préparation d’image](docs/ACCURACY.md).
+Un changement de recto efface le verso précédent pour ne pas mélanger deux cartes. Toute modification effective des photos invalide les anciens résultats. « Nouvelle carte » efface la session. Aucun document ni résultat n’est sauvegardé sur le serveur ; seuls les modèles et dépendances sont persistants.
 
-**PaddleOCR est disponible en option**, dans un environnement séparé avec deux modèles locaux français/anglais. Voir le [guide PaddleOCR pour Windows et Linux](docs/PADDLEOCR.md). Son installation est plus lourde ; elle n’est pas requise pour utiliser Tesseract. L’intégration et l’import des bibliothèques ont été testés, mais la reconnaissance réelle PaddleOCR reste à valider : le téléchargement des modèles est bloqué dans l’environnement cloud.
+## Ce qui est spécialisé
 
-Une image à la fois. Le texte imprimé net donne les meilleurs résultats ; les manuscrits, tableaux complexes et photos floues ne sont pas pris en charge de manière fiable. Sans libellé reconnu, aucun champ n’est deviné. Le traitement Tesseract est limité à 30 secondes (90 secondes pour PaddleOCR) ; un nouvel import efface le résultat précédent.
+Le pipeline utilise un gabarit de zones normalisées, pas la recherche de libellés sur toute la carte. Les sept découpes de valeurs sont transmises à **un seul worker et une seule instance `TextRecognition` PaddleOCR**, avec le modèle latin local. Le portrait, la puce et la signature sont en dehors des zones. Les formats sont ensuite vérifiés sans corriger silencieusement les chiffres ou inventer une valeur.
 
-Les images transitent uniquement entre le navigateur et le serveur local. Les fichiers temporaires sont supprimés après traitement, même en échec. L’application ne conserve ni historique ni contenu dans ses journaux. Le texte intégral OCR n’est pas renvoyé dans le parcours des sept champs. Les champs retenus restent dans la page jusqu’au nouvel import ou à sa fermeture, sauf copie ou export volontaire.
+Cela spécialise le **pipeline de lecture et de validation** ; aucun nouveau modèle neuronal camerounais n’est entraîné. Le gabarit a été estimé sur les exemples visuels fournis, sans intégrer leurs photos ou données personnelles dans le dépôt. Sa précision sur des photos réelles reste à mesurer. Une carte d’un autre modèle peut donner des résultats incorrects, car la classification est volontairement différée.
 
-Tesseract utilise des modèles OCR spécialisés, notamment neuronaux : aucun modèle génératif, chatbot ou service distant n’est intégré.
-
-## Développement et tests
+## Développement et validation
 
 ```sh
+.venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python -m pytest -q
 ```
 
-Les tests génèrent des images synthétiques avec Pillow, puis exercent l’API et le vrai moteur OCR. Sur Linux, la police DejaVu Sans est requise pour ces fixtures (`fonts-dejavu-core` sur Debian/Ubuntu). Le reste couvre formats et tailles invalides, langues, sécurité locale, concurrence et erreurs. Les tests OCR ne sont pas remplacés par des simulations.
+Sur Windows, remplacer l’exécutable par `.\.venv\Scripts\python.exe`. Les tests historiques d’OCR réel nécessitent Tesseract avec `fra` et `eng` et une police DejaVu Sans ou Arial. Les scripts `setup.sh` / `setup.ps1` préparent la base et, si présent, Tesseract ; ils ne remplacent pas la préparation Paddle ci-dessus.
 
-Test navigateur facultatif : installer Playwright dans un environnement Python disposant aussi de Pillow, puis lancer `python tests/browser_smoke.py` avec le serveur démarré et Chromium installé à `/usr/bin/chromium`. Ce test vérifie l’OCR réel sur deux tailles d’écran, la correction, le presse-papiers, le téléchargement et les états d’erreur. Il garde ses captures dans `.test-artifacts/`, ignoré par Git.
+Les tests CNI couvrent le gabarit, l’alignement avec perspective, les sept découpes, les formats, le worker unique, les délais/nettoyages, les doublons et les erreurs. Une substitution **explicite par Tesseract** vérifie réellement que les découpes synthétiques contiennent les bonnes valeurs ; elle ne valide pas PaddleOCR. Les deux tests réels Paddle restent ignorés si les modèles ne sont pas préparés.
 
-```sh
-# Contrôle des prérequis sans envoyer de document
-curl --fail http://127.0.0.1:8000/health
-# Extraction d’une image locale
-curl --fail -F image=@image.png -F language=fra http://127.0.0.1:8000/api/ocr
-```
+Test navigateur facultatif, serveur démarré, avec Playwright/Pillow et Chromium à `/usr/bin/chromium` : `python tests/browser_smoke.py`. Alignement et erreur de modèles manquants sont testés réellement ; la réponse de succès Paddle est simulée pour vérifier l’interface recto/verso/résultats, les corrections et exports sur ordinateur/mobile. Captures dans `.test-artifacts/` ignoré par Git.
 
-Architecture : Flask, Waitress, Pillow, OpenCV headless, NumPy, pytesseract et Tesseract. Aucun build frontend ni base de données. OpenCV augmente la taille des dépendances mais ne nécessite ni GPU ni modèle supplémentaire. Voir les [documents BRS, PRD, SRS et SAD](docs/README.md).
+Dans l’environnement cloud actuel, l’inférence réelle Paddle reste non validée faute de poids disponibles. Les tests d’interface simulés ne prouvent pas la précision du moteur, ni la qualité du gabarit sur une vraie CNI.
+
+## API
+
+- `POST /api/cni/align` : une partie `image` ; retourne une image PNG alignée encodée en base64 et les informations d’alignement. Aucun OCR.
+- `POST /api/cni/read` : deux parties `recto` / `verso` PNG canoniques de 1600 × 1000 ; retourne uniquement les sept champs et les limites du gabarit. PaddleOCR fixe, sans basculement silencieux.
+- `GET /api/cni/status` : disponibilité du moteur par zones et périmètre du gabarit.
+- `GET /health` : même moteur principal, HTTP 503 tant que la lecture par zones n’est pas prête.
+
+Les anciennes routes `/api/ocr` et `/api/engines` restent disponibles pour compatibilité technique, sans paramètres exposés dans l’interface. Détails : [zones CNI](docs/CNI_ZONES.md), [installation Paddle](docs/PADDLEOCR.md), [documentation générale](docs/README.md).
 
 ## Licence
 
-Code du projet sous [licence MIT](LICENSE). Les dépendances conservent leurs licences : Flask/Waitress et NumPy (BSD), Pillow (HPND), OpenCV, pytesseract/Tesseract et données tessdata_fast (Apache-2.0). Les données OCR téléchargées ne sont pas incluses dans le dépôt ; leur [licence officielle](https://github.com/tesseract-ocr/tessdata_fast/blob/87416418657359cb625c412a48b6e1d6d41c29bd/LICENSE) s’applique.
-
-Les objectifs complets de précision, temps et mémoire du SRS restent à mesurer sur son jeu de référence avant de déclarer une conformité complète.
+Projet sous [MIT](LICENSE). PaddleOCR/PaddlePaddle/PaddleX et leurs modèles conservent leurs licences officielles ; les dépendances conservent les leurs. Aucun document d’identité réel n’est inclus dans le dépôt.

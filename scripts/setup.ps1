@@ -1,12 +1,14 @@
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
+$tesseractAvailable = $true
 if (-not (Get-Command tesseract -ErrorAction SilentlyContinue)) {
     $engine = Join-Path $env:ProgramFiles "Tesseract-OCR\tesseract.exe"
     if (-not (Test-Path $engine)) {
-        throw "Installez Tesseract 5 pour Windows : https://github.com/UB-Mannheim/tesseract/wiki"
+        $tesseractAvailable = $false
+    } else {
+        $env:Path += ";$(Split-Path $engine -Parent)"
     }
-    $env:Path += ";$(Split-Path $engine -Parent)"
 }
 
 py -3.12 -m venv .venv
@@ -14,6 +16,10 @@ if ($LASTEXITCODE -ne 0) { throw "Python 3.12 est requis (commande py -3.12)." }
 $python = Join-Path (Get-Location) ".venv\Scripts\python.exe"
 & $python -m pip install -r requirements-dev.txt
 if ($LASTEXITCODE -ne 0) { throw "Installation des dependances echouee." }
+if (-not $tesseractAvailable) {
+    Write-Host 'Base installee. Tesseract est optionnel. Preparez PaddleOCR selon docs/PADDLEOCR.md puis lancez .\.venv\Scripts\python.exe -m app'
+    return
+}
 
 New-Item -ItemType Directory -Force .ocr-data | Out-Null
 $base = "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd"
@@ -43,4 +49,4 @@ print(state)
 assert state["ready"], "Moteur ou langues manquants"
 '@ | & $python -
 if ($LASTEXITCODE -ne 0) { throw "Tesseract ou ses langues sont indisponibles." }
-Write-Host 'Installation terminee. Demarrage : .\.venv\Scripts\python.exe -m app'
+Write-Host 'Base installee. Preparez PaddleOCR selon docs/PADDLEOCR.md. Demarrage : .\.venv\Scripts\python.exe -m app'

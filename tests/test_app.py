@@ -39,15 +39,18 @@ def post(client, data, language="fra"):
     return client.post("/api/ocr", data={"image": (io.BytesIO(data), "image.png"), "language": language, "structured": "false"})
 
 
-def test_page_and_health(client):
+def test_page_and_health(client, monkeypatch):
     page = client.get("/")
     assert page.status_code == 200
     assert b'lang="fr"' in page.data
     assert page.headers["Cache-Control"] == "no-store"
     assert "frame-ancestors 'none'" in page.headers["Content-Security-Policy"]
+    monkeypatch.setattr("app.zone_status", lambda: {"ready": True})
     health = client.get("/health")
     assert health.status_code == 200
-    assert health.json == {"ready": True, "languages": ["eng", "fra"]}
+    assert health.json["ready"] is True
+    assert health.json["engine"] == "paddleocr"
+    assert health.json["classification"] == "deferred"
 
 
 @pytest.mark.parametrize("fmt,language,content", [
@@ -139,10 +142,8 @@ def test_engine_errors(client, monkeypatch, error, status, code):
     assert b"private document" not in response.data
 
 
-def test_missing_engine_health(client, monkeypatch):
-    def fail(*args, **kwargs):
-        raise FileNotFoundError()
-    monkeypatch.setattr("app.ocr.subprocess.run", fail)
+def test_missing_primary_engine_health(client, monkeypatch):
+    monkeypatch.setattr("app.zone_status", lambda: {"ready": False})
     assert client.get("/health").status_code == 503
 
 

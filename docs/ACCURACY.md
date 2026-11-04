@@ -1,5 +1,7 @@
 # Améliorer la reconnaissance
 
+Guide du moteur historique : les réglages ci-dessous ne sont plus présentés dans l’interface. Le parcours actuel est [recto → verso → lecture par zones CNI](CNI_ZONES.md). Le benchmark de ce document reste un outil technique d’OCR généraliste.
+
 Les outils ci-dessous fonctionnent localement avec Pillow, OpenCV et Tesseract, sans API externe. Ils aident à préparer une photo ; ils ne permettent pas de récupérer du texte masqué par un reflet ou rendu illisible par le flou.
 
 ## Pour une carte photographiée

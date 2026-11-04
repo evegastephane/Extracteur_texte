@@ -6,13 +6,16 @@ from flask import Flask, jsonify, render_template, request
 from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 
 from .ocr import MAX_BYTES, OCRError, extract, readiness
-from .paddle_engine import status as paddle_status
+from .paddle_engine import status as paddle_status, zone_status
+from .cni import PROFILE, PROFILE_ID, align_card, decode_image, read_cni
+import base64
+import io
 
 
 def create_app(test_config=None):
     app = Flask(__name__)
     app.config.update(
-        MAX_CONTENT_LENGTH=MAX_BYTES + 64 * 1024,
+        MAX_CONTENT_LENGTH=2 * MAX_BYTES + 128 * 1024,
         # Werkzeug's multipart decoder buffers file chunks too. A 16 KiB
         # limit rejected ordinary uploads before the 10 MiB file check.
         MAX_FORM_MEMORY_SIZE=512 * 1024,
@@ -55,7 +58,7 @@ def create_app(test_config=None):
 
     @app.get("/health")
     def health():
-        state = readiness()
+        state = cni_state()
         return jsonify(state), 200 if state["ready"] else 503
 
     @app.post("/api/ocr")
@@ -102,6 +105,40 @@ def create_app(test_config=None):
     @app.get("/api/engines")
     def engines():
         return jsonify(tesseract=readiness(), paddleocr=paddle_status())
+
+    def cni_state():
+        return {"engine": "paddleocr", "ready": zone_status()["ready"],
+                "profile": PROFILE_ID, "profile_status": PROFILE["status"],
+                "classification": "deferred", "verso_zones": False}
+
+    @app.get("/api/cni/status")
+    def cni_status():
+        return jsonify(cni_state())
+
+    @app.post("/api/cni/align")
+    def cni_align():
+        upload = request.files.get("image")
+        if upload is None:
+            raise OCRError("missing_image", "Ajoutez une photo de la carte.")
+        with decode_image(upload.read(MAX_BYTES + 1)) as image:
+            aligned, details = align_card(image)
+        with aligned:
+            output = io.BytesIO()
+            aligned.save(output, format="PNG")
+        return jsonify(image=base64.b64encode(output.getvalue()).decode("ascii"), alignment=details)
+
+    @app.post("/api/cni/read")
+    def cni_read():
+        front, back = request.files.get("recto"), request.files.get("verso")
+        if front is None or back is None:
+            raise OCRError("missing_sides", "Ajoutez le recto et le verso avant de lancer la lecture.")
+        if not ocr_lock.acquire(blocking=False):
+            raise OCRError("busy", "Une lecture est déjà en cours. Réessayez dans un instant.", 429)
+        try:
+            result = read_cni(front.read(MAX_BYTES + 1), back.read(MAX_BYTES + 1))
+            return jsonify(result)
+        finally:
+            ocr_lock.release()
 
     @app.errorhandler(OCRError)
     def ocr_error(error):

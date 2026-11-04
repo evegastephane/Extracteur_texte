@@ -1,0 +1,17 @@
+{
+  "cni_puce_recto_v1": {
+    "name": "CNI à puce — recto illustré",
+    "status": "provisional",
+    "reference_size": [1600, 1000],
+    "note": "Zones estimées sur le recto fourni, sans conserver sa photo ni ses données. Classification ancien/nouveau différée. Aucun gabarit verso ou second modèle défini.",
+    "zones": {
+      "nom": [0.265, 0.210, 0.635, 0.275],
+      "prenoms": [0.265, 0.335, 0.640, 0.402],
+      "date_naissance": [0.265, 0.462, 0.595, 0.510],
+      "lieu_naissance": [0.265, 0.540, 0.640, 0.583],
+      "sexe": [0.265, 0.615, 0.340, 0.662],
+      "taille": [0.385, 0.615, 0.530, 0.662],
+      "profession": [0.265, 0.700, 0.640, 0.755]
+    }
+  }
+}

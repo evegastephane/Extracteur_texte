@@ -1,5 +1,7 @@
 # Extraction par libellés et règles
 
+Ce document décrit le moteur historique, accessible via `/api/ocr`. Le parcours principal utilise désormais les [zones CNI prédéfinies](CNI_ZONES.md), sans recherche de libellés ni réglages dans l’interface.
+
 Le parcours de l’application conserve uniquement sept champs. Le texte OCR sert d’entrée au repérage, puis les autres informations sont écartées de la réponse, de l’écran de résultat, de la copie et des exports. Aucun modèle d’extraction n’est entraîné, aucun LLM ni API externe n’intervient. Les moteurs OCR eux-mêmes conservent leurs modèles spécialisés existants.
 
 ## Champs autorisés

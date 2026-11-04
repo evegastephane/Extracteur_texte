@@ -51,6 +51,16 @@ def status():
             "message": "Modèles locaux prêts." if ready else "Installation optionnelle requise : consultez le guide PaddleOCR."}
 
 
+def zone_status():
+    ready = status()["ready"]
+    try:
+        manifest = json.loads((MODEL_ROOT / "manifest.json").read_text(encoding="utf-8"))
+        ready = ready and manifest.get("zone_smoke_test") == "passed"
+    except (OSError, ValueError, AttributeError):
+        ready = False
+    return {"ready": ready, "message": "Reconnaissance par zones prête." if ready else "Relancez scripts/setup_paddle.py avec Python de .venv-paddle pour préparer et tester la lecture par zones."}
+
+
 def recognize(image, structured=False):
     if not status()["ready"]:
         raise PaddleFailure("PaddleOCR n’est pas préparé. Suivez le guide PaddleOCR, puis réessayez.")
@@ -85,3 +95,43 @@ def recognize(image, structured=False):
             return payload["text"].strip()
         except (OSError, ValueError, TypeError, KeyError, AttributeError):
             raise PaddleFailure("PaddleOCR a renvoyé un résultat illisible. Réessayez ou choisissez Tesseract.") from None
+
+
+def recognize_zones(crops):
+    """Recognize all value crops in ONE worker/model load; never detect full-page text."""
+    expected = {"nom", "prenoms", "date_naissance", "lieu_naissance", "sexe", "taille", "profession"}
+    if set(crops) != expected:
+        raise PaddleFailure("Le gabarit des zones est invalide.")
+    if not zone_status()["ready"]:
+        raise PaddleFailure("Le moteur par zones n’est pas prêt. Relancez scripts/setup_paddle.py avec Python de .venv-paddle (guide docs/PADDLEOCR.md), puis réessayez.")
+    with tempfile.TemporaryDirectory(prefix="extracteur_cni_") as directory:
+        folder = Path(directory)
+        jobs = []
+        for key, image in crops.items():
+            path = folder / f"{key}.png"
+            image.save(path, format="PNG")
+            jobs.append({"field": key, "path": str(path)})
+        (folder / "zones.json").write_text(json.dumps(jobs), encoding="utf-8")
+        command = [str(worker_python()), str(ROOT / "app/paddle_worker.py"),
+                   str(folder / "nom.png"), str(folder / "result.json"), str(MODEL_ROOT), str(folder / "zones.json")]
+        try:
+            completed = subprocess.run(command, timeout=TIMEOUT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        except subprocess.TimeoutExpired:
+            raise PaddleFailure("La lecture des zones a dépassé 90 secondes. Reprenez des photos plus nettes et réessayez.", 504) from None
+        except OSError:
+            raise PaddleFailure("Impossible de lancer PaddleOCR. Vérifiez son installation.") from None
+        try:
+            if completed.returncode != 0:
+                raise ValueError()
+            payload = json.loads((folder / "result.json").read_text(encoding="utf-8"))
+            if set(payload.get("zones", {})) != expected:
+                raise ValueError()
+            for value in payload["zones"].values():
+                if not isinstance(value.get("text"), str) or len(value["text"]) > 200:
+                    raise ValueError()
+                score = value.get("score")
+                if type(score) not in (int, float) or not math.isfinite(score) or not 0 <= score <= 1:
+                    raise ValueError()
+            return payload["zones"]
+        except (OSError, ValueError, TypeError, AttributeError):
+            raise PaddleFailure("La lecture par zones a échoué. Vérifiez PaddleOCR et ses modèles ; aucune valeur n’a été inventée.") from None

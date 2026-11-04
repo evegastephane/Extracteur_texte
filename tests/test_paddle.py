@@ -143,3 +143,8 @@ def test_setup_activates_only_after_smoke(tmp_path, monkeypatch):
     monkeypatch.setattr(setup_paddle, "smoke_test", lambda models: None)
     setup_paddle.main()
     assert engine.models_valid(destination)
+    assert json.loads((destination / "manifest.json").read_text())["zone_smoke_test"] == "passed"
+    monkeypatch.setattr(setup_paddle, "smoke_test", fail_smoke)
+    with pytest.raises(RuntimeError, match="synthetic"):
+        setup_paddle.main()
+    assert json.loads((destination / "manifest.json").read_text())["zone_smoke_test"] == "pending"

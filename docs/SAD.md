@@ -95,3 +95,9 @@ Windows dispose de `scripts/setup.ps1` avec contrôle des données OCR par SHA-2
 `app/fields.py` constitue le moteur déterministe de libellés et règles. Il reçoit les boîtes OCR sur l’image préparée, regroupe les lignes, trouve les libellés, associe des candidats proches et valide les formats. Il ne retourne que les sept clés autorisées et leurs indices de repérage. Tesseract utilise `image_to_data` pour ce parcours ; le worker Paddle transmet les polygones de lignes, sans changer ses modèles.
 
 L’API utilise `structured=true` par défaut et renvoie le résumé filtré avec les champs. L’ancien texte libre reste disponible uniquement avec `structured=false` explicite pour compatibilité technique ; l’interface ne le demande pas. Le navigateur propose sept champs éditables et des exports filtrés TXT/JSON. Le traitement ne stocke aucun document ni historique. Les détails et limites sont définis dans [FIELDS.md](FIELDS.md).
+
+## 10. Pipeline CNI à zones fixes et interface séquentielle
+
+`app/cni_templates.json` définit le profil provisoire du recto fourni et sept boîtes normalisées. `app/cni.py` décode les images, cherche un quadrilatère de carte, projette vers le cadre canonique, découpe les valeurs et contrôle leur format. La classification ancien/nouveau n’est pas implémentée. Le verso est décodé et conservé seulement dans la session navigateur pour relecture, sans OCR de ses champs.
+
+Le worker CNI charge une fois `TextRecognition` et le modèle latin local, puis traite les sept découpes avec association explicite au champ. Le détecteur généraliste n’est pas utilisé sur ce chemin ; il subsiste dans l’ancienne API. `zone_status()` contrôle le manifeste et le marqueur d’essai direct. `/health` reflète ce moteur principal. Le navigateur ne présente qu’une étape à la fois et n’envoie aucun réglage technique. Contrats et limites : [CNI_ZONES.md](CNI_ZONES.md).

@@ -1,34 +1,35 @@
-# Extracteur — Champs par libellés
+# Extracteur CNI camerounaise
 
-Application web locale en français pour repérer exactement sept champs à partir de libellés français/anglais et de règles spatiales. Aucun modèle d’extraction n’est entraîné ; aucun LLM ni API d’IA externe n’intervient. Flask, Pillow et OpenCV préparent l’image ; Tesseract reste le moteur OCR spécialisé par défaut. PaddleOCR est optionnel.
+Application web locale en français : **recto → Suivant → verso → Suivant → résultats**. Une seule étape est visible à la fois, sans réglages de moteur, filtre, langue ou coins. Le parcours utilise PaddleOCR pour lire sept zones fixes de valeurs, sans entraînement ni nouveaux poids spécialisés et sans basculement automatique vers Tesseract.
 
-## Périmètre et parcours
+## Parcours et champs
 
-Les seules clés de champs sont `nom`, `prenoms`, `date_naissance`, `lieu_naissance`, `sexe`, `taille` et `profession`. Les valeurs sont recherchées à droite du libellé, puis en dessous dans la même colonne ; les libellés voisins et les grands écarts spatiaux bornent la recherche. Les autres informations OCR sont écartées du résultat normal, de la copie et des exports. Ces règles peuvent néanmoins associer un mauvais texte à un champ : il ne s’agit pas d’une garantie générale de précision ou de confidentialité.
+Importer chaque face en PNG/JPEG (10 Mio et 20 millions de pixels maximum par photo). OpenCV cherche un quadrilatère de carte et le projette vers 1600 × 1000. Un cadre déjà compatible peut servir directement. L’utilisateur vérifie les bords et le sens du texte ; « Retourner l’image » applique 180° avant « Suivant ». L’alignement ne reconnaît pas automatiquement l’orientation textuelle, le modèle ou l’authenticité.
 
-1. Importer une image PNG/JPEG (une à la fois, 10 Mio et 20 millions de pixels maximum).
-2. Ajuster au besoin rotation, quatre coins horaires par poignées ou coordonnées clavier, filtre Original/Photo/Noir et blanc adaptatif et légère inclinaison (±12°). Une sélection doit inclure le libellé et sa valeur. L’aperçu montre la géométrie, pas les filtres.
-3. Choisir le moteur. Tesseract propose langue française/anglaise et disposition auto/bloc/dispersée/ligne ; PaddleOCR désactive ces deux réglages et conserve sa segmentation automatique avec modèle latin.
-4. Relire et corriger les sept propositions. Le résumé est en lecture seule. Copier ou exporter en TXT reprend seulement les champs renseignés ; le JSON contient les sept clés de champs, valeurs et statuts, avec le moteur utilisé.
+Après les deux faces confirmées, les seules clés de champs sont `nom`, `prenoms`, `date_naissance`, `lieu_naissance`, `sexe`, `taille` et `profession`. Un worker CPU charge une seule instance PaddleOCR `TextRecognition` avec `latin_PP-OCRv5_mobile_rec` pour les sept découpes de valeurs du recto, sans recherche de libellés sur la carte entière. Les champs restent modifiables ; copie/TXT reprennent ceux renseignés, JSON conserve les sept clés, leurs statuts et le gabarit.
 
-Les statuts `propose`, `non_trouve` et `a_verifier` distinguent candidat, absence et doute/conflit. Les conflits restent vides avec candidats consultables ; les formats suspects sont signalés. Les indices de libellé et position restent limités au champ concerné, sans texte OCR intégral. Les métadonnées de normalisation date/sexe/taille ne corrigent pas automatiquement la valeur reconnue. Une correction exportée est marquée `modifie_manuellement`.
+`non_trouve`, `a_verifier` et `propose` indiquent absence, doute et lecture plausible à relire. Les formats date/sexe/taille, chiffres dans les noms et scores faibles sont signalés. Aucun pourcentage de précision ni valeur manquante n’est inventé ; les normalisations sont des métadonnées, sans correction silencieuse de caractères.
 
-Une nouvelle image efface les propositions et corrections. Une extraction réussie remplace les sept champs ; un échec conserve les corrections. L’ancien ajout libre de zones n’est plus présenté.
+Revoir les photos inchangées conserve les corrections : « Suivant » réouvre les résultats sans nouvelle lecture. Une modification effective des photos invalide les résultats ; remplacer le recto efface aussi le verso précédent. « Nouvelle carte » efface la session.
 
-## API et traitement local
+## Couverture provisoire
 
-`POST /api/ocr` utilise `structured=true` par défaut : résumé filtré, exactement sept clés dans `fields`, moteur et langue. L’interface demande toujours ce mode. Le texte brut reste accessible uniquement par le mode technique explicite `structured=false`, pour compatibilité avec les mesures OCR ; la restriction des sept champs ne s’applique donc pas à cette option. Aucun stockage des champs ou documents n’est ajouté.
+Le seul profil est `cni_puce_recto_v1`, estimé sur le recto à puce fourni. Les deux exemples montrent le même type de recto, dont un tourné ; ils ne définissent ni verso ni second modèle. La classification ancien/nouveau est différée. La calibration et la précision sur de vraies CNI restent à mesurer.
 
-Le navigateur communique avec le serveur local lié à `127.0.0.1`, sans envoi de documents à un service externe. Les fichiers temporaires sont supprimés après traitement ; les résultats restent dans la page jusqu’au nouvel import ou à sa fermeture, sauf copie ou export volontaire. Le sous-processus Tesseract est limité à 30 secondes, hors prétraitement ; PaddleOCR à 90 secondes, imports et chargement compris. Les images de travail sont bornées à 8 millions de pixels et 8 000 pixels sur le plus grand côté.
+Le verso est obligatoire, décodé, aligné et affichable pour relecture, mais **n’est pas lu par OCR** : aucune zone verso n’est définie. Cette limite est affichée. Deux photos strictement identiques sont refusées ; deux photos différentes de rectos ne sont pas reconnues comme telles. Le recadrage ne constitue pas un contrôle d’identité. Une carte d’une autre disposition peut produire des champs erronés.
 
-## Moteur optionnel et limites
+## Préparation et API
 
-PaddleOCR utilise `.venv-paddle` et des modèles neuronaux OCR locaux, téléchargés lors de la préparation. Aucun basculement silencieux vers Tesseract n’a lieu. Les bibliothèques s’importent sous Linux, mais les téléchargements officiels des poids sont bloqués par HTTP 403 : inférence réelle, extraction hors ligne et précision PaddleOCR restent non validées. Les intégrations de polygones sont testées avec des sorties simulées. La validation native Windows reste à effectuer.
+Paddle reste isolé dans `.venv-paddle`. `scripts/setup_paddle.py` doit réussir le test synthétique direct de zones et écrire `zone_smoke_test: passed`, y compris pour des modèles existants. Sans modèles préparés, l’interface s’ouvre avec un avertissement mais refuse la lecture ; `/health` renvoie HTTP 503. Le worker est limité à 90 secondes, chargement et sept lectures compris ; le navigateur attend jusqu’à 105 secondes.
 
-Sans libellé reconnu, aucune identité, sexe ou profession n’est deviné. Flou, reflets, libellés mal lus et dispositions inconnues peuvent fausser les associations. Les règles ne reconnaissent pas la personne représentée et n’établissent pas une précision sur des documents réels.
+`/api/cni/align` aligne une face sans OCR ; `/api/cni/read` reçoit deux PNG canoniques et retourne les sept champs et les limites ; `/api/cni/status` décrit la disponibilité. Les anciennes routes OCR restent pour compatibilité technique, sans réglages dans l’interface.
+
+Le navigateur communique avec le serveur local lié à `127.0.0.1`. Aucun document n’est envoyé à un service externe. Aucun historique ni sauvegarde serveur des pièces n’est ajouté ; les fichiers intermédiaires et caches de requête sont supprimés en succès, erreur et expiration. Les dépendances et modèles restent persistants. Ces mesures ne garantissent ni l’exactitude des associations ni une confidentialité absolue.
 
 ## Vérification actuelle
 
-93 tests réussis, 1 test réel PaddleOCR ignoré faute de modèles. Une image synthétique vérifie réellement les sept champs avec Tesseract et l’exclusion d’un marqueur de numéro de carte. Chromium vérifie les corrections, les exports TXT/JSON et le mobile. Les deux constats de revue concernant les suffixes sur une ligne et les identifiants sur plusieurs lignes sont résolus ; six contrôles de régression indépendants ont confirmé les corrections. Le test navigateur final et les captures `.test-artifacts/desktop-fields-result.png` et `.test-artifacts/mobile-fields-result.png` ont été vérifiés. Le précédent benchmark CER synthétique mesure l’OCR Tesseract, pas la précision générale de cette extraction structurée ni celle de PaddleOCR.
+106 tests réussis, 2 tests d’inférence réelle Paddle ignorés faute de poids préparés. L’alignement synthétique et certains contrôles de découpe sont réels ; ces derniers utilisent explicitement Tesseract comme substitution, sans valider Paddle. Chromium vérifie l’alignement et l’erreur de moteur absent, puis une réponse Paddle simulée pour le parcours, les corrections, exports, remise à zéro et mobile. Le défaut de perte des corrections après simple relecture a été corrigé en réutilisant le résultat ; le test navigateur final passe.
 
-Références : [règles, API et limites](docs/FIELDS.md), [préparation](docs/ACCURACY.md), [PaddleOCR](docs/PADDLEOCR.md), [installation](README.md), [système visuel](DESIGN.md).
+Captures revues : `.test-artifacts/desktop-wizard-recto.png`, `desktop-wizard-results.png`, `mobile-wizard-recto.png`, `mobile-wizard-results.png` dans le même dossier. Elles ne prouvent pas une reconnaissance Paddle réelle. La précision sur les CNI fournies et la validation native Windows ne sont pas établies.
+
+Références : [zones et limites](docs/CNI_ZONES.md), [installation](README.md), [système visuel](DESIGN.md).

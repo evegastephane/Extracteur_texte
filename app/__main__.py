@@ -1,12 +1,12 @@
 from waitress import serve
 
 from . import create_app
-from .ocr import readiness
+from .paddle_engine import zone_status
 
 if __name__ == "__main__":
-    state = readiness()
+    state = zone_status()
     if not state["ready"]:
-        raise SystemExit("OCR indisponible : vérifiez Tesseract et les langues fra/eng. Installation : scripts/setup.ps1 sur Windows, scripts/setup.sh sur Linux. Voir README.md.")
+        print("PaddleOCR à préparer : l’interface reste disponible. Voir docs/PADDLEOCR.md.", flush=True)
     print("Extracteur de texte — http://127.0.0.1:8000", flush=True)
     serve(create_app(), host="127.0.0.1", port=8000, threads=4,
-          max_request_body_size=10 * 1024 * 1024 + 64 * 1024)
+          max_request_body_size=20 * 1024 * 1024 + 128 * 1024)
