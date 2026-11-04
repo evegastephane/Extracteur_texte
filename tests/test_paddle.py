@@ -1,6 +1,7 @@
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -11,6 +12,8 @@ from PIL import Image
 
 from app import create_app
 from app import paddle_engine as engine
+from app import paddle_worker
+from types import SimpleNamespace
 from scripts import setup_paddle
 from test_app import image_bytes
 
@@ -195,3 +198,41 @@ def test_setup_defaults_to_zone_worker_only(monkeypatch, tmp_path, check_legacy)
     assert len(calls) == (2 if check_legacy else 1)
     assert calls[0][1] == "-u"
     assert len(calls[0]) == 7
+
+
+def test_worker_import_diagnostic_without_models(monkeypatch, tmp_path, capsys):
+    monkeypatch.setenv("EXTRACTEUR_PADDLE_DIAGNOSTICS", "1")
+    monkeypatch.setitem(sys.modules, "paddle", SimpleNamespace(__version__="synthetic"))
+    monkeypatch.setitem(sys.modules, "paddleocr", SimpleNamespace(TextRecognition=object))
+    monkeypatch.setattr(sys, "argv", ["worker", "--diagnose-import"])
+    calls = []
+    monkeypatch.setattr(paddle_worker.faulthandler, "enable", lambda: None)
+    monkeypatch.setattr(paddle_worker.faulthandler, "dump_traceback_later", lambda seconds, repeat: calls.append((seconds, repeat)))
+    monkeypatch.setattr(paddle_worker.faulthandler, "cancel_dump_traceback_later", lambda: calls.append("cancel"))
+    paddle_worker.main()
+    assert calls == [(20, True), "cancel"]
+    output = capsys.readouterr().out
+    assert "PaddlePaddle natif importé" in output and "sans modèle ni activation" in output
+    assert os.environ["PADDLE_PDX_EAGER_INIT"] == "False"
+    assert os.environ["OMP_NUM_THREADS"] == "1"
+
+
+def test_import_diagnostic_cli_does_not_prepare_models(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["setup", "--diagnose-import"])
+    calls = []
+    monkeypatch.setattr(setup_paddle, "run_smoke_worker", lambda command, stage: calls.append(command))
+    monkeypatch.setattr(setup_paddle, "main", lambda **kwargs: pytest.fail("Models must not be prepared"))
+    setup_paddle.cli()
+    assert len(calls) == 1 and calls[0][-1] == "--diagnose-import"
+
+
+def test_import_trace_cancelled_after_failure(monkeypatch):
+    monkeypatch.setenv("EXTRACTEUR_PADDLE_DIAGNOSTICS", "1")
+    calls = []
+    monkeypatch.setattr(paddle_worker.faulthandler, "enable", lambda: None)
+    monkeypatch.setattr(paddle_worker.faulthandler, "dump_traceback_later", lambda *a, **kw: calls.append("armed"))
+    monkeypatch.setattr(paddle_worker.faulthandler, "cancel_dump_traceback_later", lambda: calls.append("cancel"))
+    with pytest.raises(RuntimeError):
+        with paddle_worker.diagnostic_trace():
+            raise RuntimeError("synthetic import error")
+    assert calls == ["armed", "cancel"]

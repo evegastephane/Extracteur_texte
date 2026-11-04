@@ -166,9 +166,14 @@ def main(check_legacy=False):
 
 def cli():
     parser = argparse.ArgumentParser(description="Préparer PaddleOCR CNI et diagnostiquer chaque étape locale.")
-    parser.add_argument("--check-legacy", action="store_true", help="Tester aussi l’ancien détecteur généraliste, non utilisé par le parcours CNI.")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--check-legacy", action="store_true", help="Tester aussi l’ancien détecteur généraliste, non utilisé par le parcours CNI.")
+    mode.add_argument("--diagnose-import", action="store_true", help="Tester uniquement les imports locaux, sans télécharger de modèle ni activer le moteur.")
     args = parser.parse_args()
     try:
+        if args.diagnose_import:
+            run_smoke_worker([sys.executable, "-u", str(ROOT / "app/paddle_worker.py"), "--diagnose-import"], "imports locaux PaddlePaddle et TextRecognition (sans modèles)")
+            return
         main(check_legacy=args.check_legacy)
     except (URLError, TimeoutError):
         raise SystemExit("Échec du TÉLÉCHARGEMENT des modèles : vérifiez Internet et l’accès HTTPS à paddle-model-ecology.bj.bcebos.com. Aucun nouveau modèle n’a été activé.") from None

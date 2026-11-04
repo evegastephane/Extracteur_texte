@@ -77,3 +77,17 @@ La préparation indique maintenant les versions installées, puis chaque étape 
 Par défaut, aucune initialisation de l’ancien détecteur généraliste n’est requise. Pour tester volontairement l’ancienne API : `python scripts/setup_paddle.py --check-legacy`, avec le Python de `.venv-paddle`. L’activation CNI et celle de l’ancien pipeline sont séparées ; un test CNI réussi ne déclare pas l’ancien détecteur validé.
 
 Après un test interrompu, les empreintes des fichiers peuvent rester valides même si le marqueur d’essai est `pending`. Relancer le script reteste ces mêmes fichiers, sans imposer leur suppression ou un nouveau téléchargement. Les marqueurs de disponibilité restent désactivés tant que les tests demandés ne réussissent pas.
+
+### Blocage à l’import de TextRecognition sous Windows
+
+Le worker règle maintenant `PADDLE_PDX_EAGER_INIT=False`, option supportée par la version PaddleX épinglée. Il n’effectue que de l’inférence et n’a pas besoin d’initialiser par anticipation d’autres dépôts/composants. Il importe explicitement PaddlePaddle natif avant le wrapper PaddleOCR, avec des messages séparés, et utilise `OMP_NUM_THREADS=1` pour l’import natif.
+
+Un diagnostic indépendant peut être exécuté sans télécharger de modèles et sans activer le moteur :
+
+```powershell
+.\.venv-paddle\Scripts\python.exe -u scripts/setup_paddle.py --diagnose-import
+```
+
+En mode préparation/diagnostic uniquement, une trace des piles Python est affichée toutes les 20 secondes si l’attente se prolonge. La mention `Timeout (0:00:20)` de cette trace est une capture d’état, pas encore l’échec du test : la limite totale reste 90 secondes. Copier la trace et les dernières lignes `[Paddle]` si le problème persiste. Aucune trace de ce type n’est activée dans les lectures de documents de production.
+
+Le diagnostic d’import avec cette configuration a réussi réellement sous Linux, sans modèles. Cela ne prouve pas que le problème Windows est résolu, ni que les modèles reconnaissent correctement une carte. Un diagnostic d’import réussi doit être suivi de la préparation normale, sans `--diagnose-import`, pour tester et activer les sept zones.

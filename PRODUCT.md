@@ -28,8 +28,10 @@ Le navigateur communique avec le serveur local lié à `127.0.0.1`. Aucun docume
 
 ## Vérification actuelle
 
-111 tests réussis, 2 tests d’inférence réelle Paddle ignorés faute de poids préparés. L’alignement synthétique et certains contrôles de découpe sont réels ; ces derniers utilisent explicitement Tesseract comme substitution, sans valider Paddle. Chromium vérifie l’alignement et l’erreur de moteur absent, puis une réponse Paddle simulée pour le parcours, les corrections, exports, remise à zéro et mobile. Le défaut de perte des corrections après simple relecture a été corrigé en réutilisant le résultat ; le test navigateur final passe.
+114 tests réussis, 2 tests d’inférence réelle Paddle ignorés faute de poids préparés. L’alignement synthétique et certains contrôles de découpe sont réels ; ces derniers utilisent explicitement Tesseract comme substitution, sans valider Paddle. Chromium vérifie l’alignement et l’erreur de moteur absent, puis une réponse Paddle simulée pour le parcours, les corrections, exports, remise à zéro et mobile. Le défaut de perte des corrections après simple relecture a été corrigé en réutilisant le résultat ; le test navigateur final passe.
 
 Captures revues : `.test-artifacts/desktop-wizard-recto.png`, `desktop-wizard-results.png`, `mobile-wizard-recto.png`, `mobile-wizard-results.png` dans le même dossier. Elles ne prouvent pas une reconnaissance Paddle réelle. La précision sur les CNI fournies et la validation native Windows ne sont pas établies.
 
 Références : [zones et limites](docs/CNI_ZONES.md), [installation](README.md), [système visuel](DESIGN.md).
+
+Diagnostic Paddle : import natif séparé, initialisation anticipée PaddleX désactivée dans le worker, mode sans modèles `--diagnose-import` et traces de pile toutes les 20 secondes pendant la préparation seulement. Cet import a été exécuté avec succès sous Linux ; le blocage Windows reste à confirmer sur la machine concernée.

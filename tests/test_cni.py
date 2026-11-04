@@ -166,6 +166,7 @@ def test_zone_worker_loads_recognition_once(monkeypatch, tmp_path):
             return [{"rec_text": VALUES[Path(input).stem], "rec_score": .98}]
         def close(self): calls.append(("close",))
     monkeypatch.setitem(sys.modules, "paddleocr", SimpleNamespace(TextRecognition=FakeRecognition))
+    monkeypatch.setitem(sys.modules, "paddle", SimpleNamespace(__version__="synthetic"))
     monkeypatch.setattr(sys, "argv", ["worker.py", "unused.png", str(tmp_path / "out.json"), str(tmp_path / "models"), str(job_file)])
     paddle_worker.main()
     payload = json.loads((tmp_path / "out.json").read_text())
